@@ -6,6 +6,7 @@ const getToken = () => {
 
 const handleResponse = async (response) => {
   const data = await response.json();
+  console.log(data);
   if (!response.ok) {
     if (data.message && data.message.status) {
       throw new Error(data.message.status[0]);

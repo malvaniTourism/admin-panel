@@ -41,6 +41,7 @@ const Charts = React.lazy(() => import('./views/charts/Charts'))
 const Sites = React.lazy(() => import('./views/sites/Sites'))
 const Categories = React.lazy(() => import('./views/categories/Categories'))
 const Banners = React.lazy(() => import('./views/banners/Banners'))
+const Routes = React.lazy(() => import('./views/routes/Routes'))
 
 // Icons
 const CoreUIIcons = React.lazy(() => import('./views/icons/coreui-icons/CoreUIIcons'))
@@ -82,9 +83,6 @@ const routes = [
   { path: '/buttons/dropdowns', name: 'Dropdowns', element: Dropdowns },
   { path: '/buttons/button-groups', name: 'Button Groups', element: ButtonGroups },
   { path: '/charts', name: 'Charts', element: Charts },
-  { path: '/sites', name: 'Sites', element: Sites },
-  { path: '/categories', name: 'Categories', element: Categories },
-  { path: '/banners', name: 'Banners', element: Banners },
   { path: '/forms', name: 'Forms', element: FormControl, exact: true },
   { path: '/forms/form-control', name: 'Form Control', element: FormControl },
   { path: '/forms/select', name: 'Select', element: Select },
@@ -105,6 +103,11 @@ const routes = [
   { path: '/notifications/modals', name: 'Modals', element: Modals },
   { path: '/notifications/toasts', name: 'Toasts', element: Toasts },
   { path: '/widgets', name: 'Widgets', element: Widgets },
+  // New Routes from here
+  { path: '/sites', name: 'Sites', element: Sites },
+  { path: '/categories', name: 'Categories', element: Categories },
+  { path: '/banners', name: 'Banners', element: Banners },
+  { path: '/routes', name: 'Routes', element: Routes },
 ]
 
 export default routes

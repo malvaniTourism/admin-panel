@@ -78,7 +78,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Routes',
-        to: '/theme/routes',
+        to: '/routes',
       },
       {
         component: CNavItem,
