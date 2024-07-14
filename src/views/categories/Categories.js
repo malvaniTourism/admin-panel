@@ -200,6 +200,7 @@ const Categories = () => {
                   </CForm>
                 </CCardBody>
               </CCard>
+              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
             </CCol>
           </CCardHeader>
           <CCardBody>
@@ -306,7 +307,6 @@ const Categories = () => {
           <CButton color="primary" onClick={handleEditCategory}>Save Changes</CButton>
         </CModalFooter>
       </CModal>
-      {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
     </CRow>
   );
 };

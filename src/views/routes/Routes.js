@@ -28,7 +28,7 @@ import {
   CAlert
 } from '@coreui/react';
 import apiService from 'src/services/apiService';
-import Dropdown from '../../components/Dropdown';
+import DropdownSearch from '../../components/DropdownSearch';
 
 const Routes = () => {
   const [routes, setRoutes] = useState([]);
@@ -83,6 +83,12 @@ const Routes = () => {
     setLoading(true);
     try {
       const data = await apiService('POST', `routes?page=${page}`, form);
+      console.log(data.message.destination_place_id);
+      if (!data.success) {
+        showAlert(data.message.destination_place_id);
+        return;
+      }
+
       setRoutes(data.data.data || []);
       setLinks(data.data.links || []);
       setTotalPages(data.data.last_page || 1);
@@ -203,7 +209,13 @@ const Routes = () => {
 
   const handleSrcDropdownChange = (id) => {
     console.log(id);
-    setFormData({ ...formData, category: id });
+    setFormData({ ...formData, source_place_id: id });
+    // You can add additional logic here if needed
+  };
+
+  const handleDestDropdownChange = (id) => {
+    console.log(id);
+    setFormData({ ...formData, destination_place_id: id });
     // You can add additional logic here if needed
   };
 
@@ -217,24 +229,21 @@ const Routes = () => {
                 <CCardBody>
                   <CForm className="row gx-3 gy-2 align-items-center" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
                     <CCol sm={3}>
-                      <CFormLabel htmlFor="specificSizeInputName">Name</CFormLabel>
                       <CFormInput id="specificSizeInputName" name="search" value={formData.search} onChange={handleInputChange} placeholder="Route name" />
                     </CCol>
                     <CCol sm={3}>
-                      <CFormLabel htmlFor="specificSizeSelectRoutes">Source Place</CFormLabel>
-                      <Dropdown
+                      <DropdownSearch
                         onChange={handleSrcDropdownChange}
                         endpoint="sites"
+                        label="Source Place"
                       />
                     </CCol>
                     <CCol sm={3}>
-                      <CFormLabel htmlFor="specificSizeSelectCity">City</CFormLabel>
-                      <CFormSelect id="specificSizeSelectCity" name="city" value={formData.city} onChange={handleInputChange}>
-                        <option value="">City...</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
-                      </CFormSelect>
+                      <DropdownSearch
+                        onChange={handleDestDropdownChange}
+                        endpoint="sites"
+                        label="Destination Place"
+                      />
                     </CCol>
                     <CCol xs="auto">
                       <CButton color="primary" type="submit">
@@ -249,6 +258,7 @@ const Routes = () => {
                   </CForm>
                 </CCardBody>
               </CCard>
+              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
             </CCol>
           </CCardHeader>
           <CCardBody>
@@ -328,11 +338,20 @@ const Routes = () => {
             <CFormLabel htmlFor="description">Description</CFormLabel>
             <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
 
-            <CFormLabel htmlFor="source_place_id">Destination Place</CFormLabel>
-            <CFormInput id="source_place_id" name="source_place_id" value={formData.source_place_id} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="destination_place_id">Destination Place</CFormLabel>
-            <CFormInput id="destination_place_id" name="destination_place_id" value={formData.destination_place_id} onChange={handleInputChange} />
+            <CCol sm={3}>
+              <DropdownSearch
+                onChange={handleSrcDropdownChange}
+                endpoint="sites"
+                label="Source Place"
+              />
+            </CCol>
+            <CCol sm={3}>
+              <DropdownSearch
+                onChange={handleDestDropdownChange}
+                endpoint="sites"
+                label="Destination Place"
+              />
+            </CCol>
 
             <CFormLabel htmlFor="bus_type_id">Bus Type</CFormLabel>
             <CFormInput id="bus_type_id" name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />
@@ -382,11 +401,20 @@ const Routes = () => {
             <CFormLabel htmlFor="description">Description</CFormLabel>
             <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
 
-            <CFormLabel htmlFor="source_place_id">Destination Place</CFormLabel>
-            <CFormInput id="source_place_id" name="source_place_id" value={formData.source_place_id} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="destination_place_id">Destination Place</CFormLabel>
-            <CFormInput id="destination_place_id" name="destination_place_id" value={formData.destination_place_id} onChange={handleInputChange} />
+            <CCol sm={3}>
+              <DropdownSearch
+                onChange={handleSrcDropdownChange}
+                endpoint="sites"
+                label="Source Place"
+              />
+            </CCol>
+            <CCol sm={3}>
+              <DropdownSearch
+                onChange={handleDestDropdownChange}
+                endpoint="sites"
+                label="Destination Place"
+              />
+            </CCol>
 
             <CFormLabel htmlFor="bus_type_id">Bus Type</CFormLabel>
             <CFormInput id="bus_type_id" name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />
@@ -424,7 +452,6 @@ const Routes = () => {
           <CButton color="primary" onClick={handleEditCategory}>Save Changes</CButton>
         </CModalFooter>
       </CModal>
-      {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
     </CRow>
   );
 };
