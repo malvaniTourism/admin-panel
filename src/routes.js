@@ -42,6 +42,8 @@ const Sites = React.lazy(() => import('./views/sites/Sites'))
 const Categories = React.lazy(() => import('./views/categories/Categories'))
 const Banners = React.lazy(() => import('./views/banners/Banners'))
 const Routes = React.lazy(() => import('./views/routes/Routes'))
+const Queries = React.lazy(() => import('./views/queries/Queries'))
+const Users = React.lazy(() => import('./views/users/Users'))
 
 // Icons
 const CoreUIIcons = React.lazy(() => import('./views/icons/coreui-icons/CoreUIIcons'))
@@ -108,6 +110,8 @@ const routes = [
   { path: '/categories', name: 'Categories', element: Categories },
   { path: '/banners', name: 'Banners', element: Banners },
   { path: '/routes', name: 'Routes', element: Routes },
+  { path: '/queries', name: 'Queries', element: Queries },
+  { path: '/users', name: 'Users', element: Users },
 ]
 
 export default routes

@@ -107,12 +107,12 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Users',
-        to: '/theme/users',
+        to: '/users',
       },
       {
         component: CNavItem,
-        name: 'Contacts',
-        to: '/theme/contacts',
+        name: 'Queries',
+        to: '/queries',
         icon: <CIcon icon={cilDrop} customClassName="nav-icon" />,
       },
     ],
