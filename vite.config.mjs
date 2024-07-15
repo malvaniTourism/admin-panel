@@ -43,7 +43,7 @@ export default defineConfig(() => {
       port: 3000,
       proxy: {
         '/api': {
-          target: 'https://dev.tourkokan.com/admin/v2', // Your backend API server
+          target: 'http://dev.tourkokan.com/admin/v2', // Your backend API server
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''), // Remove /api prefix from path
           secure: true // Make sure requests are secure (HTTPS)
