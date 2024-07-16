@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CButton,
   CCard,
@@ -13,44 +12,42 @@ import {
   CInputGroup,
   CInputGroupText,
   CRow,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import { cilLockLocked, cilUser } from '@coreui/icons'
+  CSpinner,
+  CAlert,
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilLockLocked, cilUser } from '@coreui/icons';
+import apiService from 'src/services/apiService';
 
 const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
+  const showAlert = (errorMessage) => {
+    setError(errorMessage);
+  };
 
   const handleLogin = async (event) => {
     event.preventDefault();
+    setLoading(true);
     try {
-      const response = await fetch('http://dev.tourkokan.com/admin/v2/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const response = await apiService('POST', 'auth/login', {
+        email,
+        password,
       });
 
-      if (!response.ok) {
-        throw new Error('Invalid username or password');
-      }
-
-      const resp = await response.json();
-      localStorage.setItem('token', resp.data.access_token);
-      // Navigate to the next page
+      localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
-    } catch (err) {
-      setError(err.message);
+    } catch (error) {
+      console.error('Error logging in:', error);
+      showAlert(error.response?.data?.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
-
 
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
@@ -63,16 +60,18 @@ const Login = () => {
                   <CForm onSubmit={handleLogin}>
                     <h1>Login</h1>
                     <p className="text-body-secondary">Sign In to your account</p>
-                    {error && <p className="text-danger">{error}</p>}
+                    {error && <CAlert color="danger" dismissible onClose={() => setError('')}>{error}</CAlert>}
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
-                        placeholder="Username"
+                        type="email"
+                        placeholder="Email"
                         autoComplete="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        required
                       />
                     </CInputGroup>
                     <CInputGroup className="mb-4">
@@ -85,12 +84,13 @@ const Login = () => {
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        required
                       />
                     </CInputGroup>
                     <CRow>
                       <CCol xs={6}>
-                        <CButton type="submit" color="primary" className="px-4">
-                          Login
+                        <CButton type="submit" color="primary" className="px-4" disabled={loading}>
+                          {loading ? <CSpinner size="sm" /> : 'Login'}
                         </CButton>
                       </CCol>
                       <CCol xs={6} className="text-right">
@@ -123,7 +123,7 @@ const Login = () => {
         </CRow>
       </CContainer>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
