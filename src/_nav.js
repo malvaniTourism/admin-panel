@@ -102,7 +102,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Bonus Types',
-        to: '/theme/bonustypes',
+        to: '/bonustypes',
       },
       {
         component: CNavItem,

@@ -25,9 +25,11 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CAlert
+  CAlert,
+  CFormSwitch
 } from '@coreui/react';
 import apiService from 'src/services/apiService';
+import DropdownSearch from '../../components/DropdownSearch';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -45,6 +47,7 @@ const Categories = () => {
     meta_data: '',
   });
   const [error, setError] = useState(null);
+  const [isChecked, setIsChecked] = useState();
 
   useEffect(() => {
     fetchCategories(currentPage);
@@ -59,9 +62,13 @@ const Categories = () => {
   };
 
   const fetchCategories = async (page) => {
+    const form = new FormData();
+    if (formData.parent_id) form.append('parent_id', formData.parent_id);
+    if (formData.status) form.append('status', formData.status);
+
     setLoading(true);
     try {
-      const data = await apiService('POST', `listcategories?page=${page}`, {});
+      const data = await apiService('POST', `listcategories?page=${page}`, form);
       setCategories(data.data.data || []);
       setTotalPages(data.data.last_page || 1);
     } catch (error) {
@@ -71,11 +78,18 @@ const Categories = () => {
       setLoading(false);
     }
   };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prevFormData) => {
+      console.log(value);
+      if (value == 2) {
+        return { ...prevFormData, [name]: '' };
+
+      }
+      return { ...prevFormData, [name]: value };
+    });
   };
+
 
   const handleFileChange = (e) => {
     setFormData({ ...formData, icon: e.target.files[0] });
@@ -109,7 +123,6 @@ const Categories = () => {
     if (formData.name) form.append('name', formData.name);
     if (formData.description) form.append('description', formData.description);
     if (formData.icon) form.append('icon', formData.icon);
-    form.append('status', formData.status ? '1' : '0');
     if (formData.meta_data) form.append('meta_data', formData.meta_data);
 
     setLoading(true);
@@ -144,11 +157,46 @@ const Categories = () => {
       name: category.name,
       description: category.description,
       icon: null,
-      status: category.status,
       meta_data: category.meta_data,
     });
     setShowEditModal(true);
   };
+
+  const handleSwitchChange = async (id, status) => {
+    const formData = new FormData();
+    formData.append('id', id);
+    formData.append('status', status);
+    setIsChecked(!isChecked);
+
+    setLoading(true);
+    try {
+      await apiService('POST', 'updateCategory', formData);
+      setCategories(prevCategories =>
+        prevCategories.map(category =>
+          category.id === id ? { ...category, status: status } : category
+        )
+      );
+    } catch (error) {
+      console.error('Error updating category:', error);
+      showAlert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSrcDropdownChange = (id) => {
+    console.log(id);
+    setFormData({ ...formData, parent_id: id });
+    // You can add additional logic here if needed
+  };
+
+  const handleSearch = () => {
+    // Reset pagination to first page when searching
+    setCurrentPage(1);
+    fetchCategories(currentPage);
+    // Fetch routes with the updated search criteria
+  };
+
 
   return (
     <CRow>
@@ -158,7 +206,7 @@ const Categories = () => {
             <CCol xs={12}>
               <CCard className="mb-4">
                 <CCardBody>
-                  <CForm className="row gx-3 gy-2 align-items-center">
+                  <CForm className="row gx-3 gy-2 align-items-center" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
                     <CCol sm={3}>
                       <CFormLabel className="visually-hidden" htmlFor="specificSizeInputName">
                         Name
@@ -166,25 +214,17 @@ const Categories = () => {
                       <CFormInput id="specificSizeInputName" placeholder="Jane Doe" />
                     </CCol>
                     <CCol sm={3}>
-                      <CFormLabel className="visually-hidden" htmlFor="specificSizeSelect">
-                        Preference
-                      </CFormLabel>
-                      <CFormSelect id="specificSizeSelect">
-                        <option>Category...</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
-                      </CFormSelect>
+                      <DropdownSearch
+                        onChange={handleSrcDropdownChange}
+                        endpoint="listcategories"
+                        label="Categories"
+                      />
                     </CCol>
                     <CCol sm={3}>
-                      <CFormLabel className="visually-hidden" htmlFor="specificSizeSelect">
-                        Preference
-                      </CFormLabel>
-                      <CFormSelect id="specificSizeSelect">
-                        <option>City...</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
+                      <CFormSelect id="status" name="status" value={formData.status} onChange={handleInputChange}>
+                        <option value="2">All...</option>
+                        <option value="1">Enable</option>
+                        <option value="0">Disable</option>
                       </CFormSelect>
                     </CCol>
                     <CCol xs="auto">
@@ -228,7 +268,14 @@ const Categories = () => {
                         <CTableDataCell>
                           {category.icon ? <CImage src={"https://ftp.dev.tourkokan.com/" + category.icon} alt={category.name} width="50" /> : 'No Image'}
                         </CTableDataCell>
-                        <CTableDataCell>{category.status ? 'Active' : 'Inactive'}</CTableDataCell>
+                        {/* <CTableDataCell>{category.status ? 'Active' : 'Inactive'}</CTableDataCell> */}
+                        <CTableDataCell>
+                          <CFormSwitch
+                            id={`formSwitchCheckChecked-${category.id}`}
+                            defaultChecked={category.status == 1 ? 1 : 0}
+                            onChange={() => handleSwitchChange(category.id, category.status == 1 ? 0 : 1)}
+                          />
+                        </CTableDataCell>
                         <CTableDataCell>
                           <CButton color="warning" size="sm" onClick={() => openEditModal(category)}>Edit</CButton>{' '}
                           <CButton color="danger" size="sm" onClick={() => handleDeleteCategory(category.id)}>Delete</CButton>
@@ -293,11 +340,6 @@ const Categories = () => {
             <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
             <CFormLabel htmlFor="icon">Icon</CFormLabel>
             <CFormInput type="file" id="icon" name="icon" onChange={handleFileChange} />
-            <CFormLabel htmlFor="status">Status</CFormLabel>
-            <CFormSelect id="status" name="status" value={formData.status} onChange={handleInputChange}>
-              <option value={true}>Active</option>
-              <option value={false}>Inactive</option>
-            </CFormSelect>
             <CFormLabel htmlFor="meta_data">Meta Data</CFormLabel>
             <CFormInput id="meta_data" name="meta_data" value={formData.meta_data} onChange={handleInputChange} />
           </CForm>

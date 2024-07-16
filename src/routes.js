@@ -44,6 +44,7 @@ const Banners = React.lazy(() => import('./views/banners/Banners'))
 const Routes = React.lazy(() => import('./views/routes/Routes'))
 const Queries = React.lazy(() => import('./views/queries/Queries'))
 const Users = React.lazy(() => import('./views/users/Users'))
+const BonusTypes = React.lazy(() => import('./views/bonustypes/BonusTypes'))
 
 // Icons
 const CoreUIIcons = React.lazy(() => import('./views/icons/coreui-icons/CoreUIIcons'))
@@ -107,11 +108,12 @@ const routes = [
   { path: '/widgets', name: 'Widgets', element: Widgets },
   // New Routes from here
   { path: '/sites', name: 'Sites', element: Sites },
-  { path: '/categories', name: 'Categories', element: Categories },
+  { path: '/categories', name: 'Categories & Sub Categories', element: Categories },
   { path: '/banners', name: 'Banners', element: Banners },
   { path: '/routes', name: 'Routes', element: Routes },
   { path: '/queries', name: 'Queries', element: Queries },
   { path: '/users', name: 'Users', element: Users },
+  { path: '/bonustypes', name: 'BonusTypes', element: BonusTypes },
 ]
 
 export default routes
