@@ -39,6 +39,10 @@ const Login = () => {
         password,
       });
 
+      if (response.success == false) {
+        showAlert(response?.message|| 'Something went wrong');
+        return;
+      }
       localStorage.setItem('token', response.data.access_token);
       navigate('/dashboard');
     } catch (error) {

@@ -21,6 +21,7 @@ import {
   CButton,
   CSpinner
 } from '@coreui/react'
+import apiService from 'src/services/apiService';
 
 const Banners = () => {
   const [banners, setBanners] = useState([])
@@ -37,18 +38,13 @@ const Banners = () => {
     setLoading(true)
 
     try {
-      const response = await fetch(`https://dev.tourkokan.com/admin/v2/listBanners?page=${page}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
+      const data = await apiService('POST', `listBanners?page=${page}`, {});
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
+      if (data.success == false) {
+        showAlert(data?.message || 'Something went wrong');
+        return;
       }
 
-      const data = await response.json()
       console.log('API response:', data)
 
       if (data && data.data) {

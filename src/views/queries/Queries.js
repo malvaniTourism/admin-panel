@@ -41,6 +41,7 @@ const Queries = () => {
   });
   const [error, setError] = useState(null);
   const [isChecked, setIsChecked] = useState();
+  const [links, setLinks] = useState([]);
 
   useEffect(() => {
     fetchQueries(currentPage);
@@ -51,6 +52,7 @@ const Queries = () => {
     try {
       const data = await apiService('POST', `getQueries?page=${page}`, {});
       setQueries(data.data.data || []);
+      setLinks(data.data.links || []);
       setTotalPages(data.data.last_page || 1);
     } catch (error) {
       console.error('Error fetching queries:', error);
@@ -78,6 +80,20 @@ const Queries = () => {
     }
   };
 
+  const renderPaginationLabel = (label) => {
+    return label.replace('&laquo;', '').replace('&raquo;', '');
+  };
+
+  const handlePaginationClick = (label) => {
+    if (label === '&laquo; Previous') {
+      setCurrentPage(currentPage - 1);
+    } else if (label === 'Next &raquo;') {
+      setCurrentPage(currentPage + 1);
+    } else {
+      setCurrentPage(parseInt(label)); // Assuming the label is numeric page number
+    }
+  };
+  
   return (
     <CRow>
       <CCol xs={12}>
@@ -157,17 +173,16 @@ const Queries = () => {
                   </CTableBody>
                 </CTable>
                 <CPagination>
-                  <CPaginationItem disabled={currentPage <= 1} onClick={() => setCurrentPage(currentPage - 1)}>
-                    Previous
-                  </CPaginationItem>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <CPaginationItem key={i} active={i + 1 === currentPage} onClick={() => setCurrentPage(i + 1)}>
-                      {i + 1}
+                  {links.map((link, index) => (
+                    <CPaginationItem
+                      key={index}
+                      active={link.active}
+                      onClick={() => handlePaginationClick(link.label)}
+                      disabled={!link.url} // Assuming link.url being null means it's disabled
+                    >
+                      {renderPaginationLabel(link.label)}
                     </CPaginationItem>
                   ))}
-                  <CPaginationItem disabled={currentPage >= totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
-                    Next
-                  </CPaginationItem>
                 </CPagination>
               </>
             )}

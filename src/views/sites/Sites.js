@@ -23,6 +23,7 @@ import {
   CButton,
   CSpinner
 } from '@coreui/react'
+import apiService from 'src/services/apiService';
 
 const Sites = () => {
   const [sites, setSites] = useState([])
@@ -44,20 +45,12 @@ const Sites = () => {
     console.log(token, "Token")
 
     try {
-      const response = await fetch(`https://dev.tourkokan.com/admin/v2/sites?page=${page}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      })
+      const data = await apiService('POST', `sites?page=${page}`, formData);
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok')
+      if (data.success == false) {
+        showAlert(data?.message || 'Something went wrong');
+        return;
       }
-
-      const data = await response.json()
-      console.log('API response:', data)
 
       if (data && data.data) {
         setSites(data.data.data || [])
