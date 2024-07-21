@@ -19,19 +19,42 @@ import {
   CFormLabel,
   CFormSelect,
   CButton,
-  CSpinner
+  CSpinner,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter
 } from '@coreui/react'
 import apiService from 'src/services/apiService';
+import DropdownSearch from '../../components/DropdownSearch';
 
 const Banners = () => {
   const [banners, setBanners] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    id: '',
+    name: '',
+    code: '',
+    amount: '',
+    description: ''
+  });
 
   useEffect(() => {
     fetchBanners(currentPage)
   }, [currentPage])
+
+  const showAlert = (errorMessage) => {
+    setError(errorMessage);
+  };
+
+  const clearAlert = () => {
+    setError(null);
+  };
 
   const fetchBanners = async (page) => {
     const token = localStorage.getItem('token')
@@ -60,6 +83,51 @@ const Banners = () => {
     }
   }
 
+  const handleAddBanners = async () => {
+    const form = new FormData();
+    if (formData.name) form.append('name', formData.name);
+    if (formData.code) form.append('code', formData.code);
+    if (formData.amount) form.append('amount', formData.amount);
+    if (formData.description) form.append('description', formData.description);
+
+    setLoading(true);
+    try {
+      const data = await apiService('POST', 'addBonusType', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
+      setShowAddModal(false);
+      fetchBonusTypes(currentPage);
+    } catch (error) {
+      console.error('Error adding bonus type:', error);
+      showAlert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevFormData) => {
+      console.log(value);
+      if (value == 2) {
+        return { ...prevFormData, [name]: '' };
+
+      }
+      return { ...prevFormData, [name]: value };
+    });
+  };
+
+
+  const handleSrcDropdownChange = (id) => {
+    console.log(id);
+    setFormData({ ...formData, parent_id: id });
+    // You can add additional logic here if needed
+  };
   return (
     <CRow>
       <CCol xs={12}>
@@ -105,9 +173,16 @@ const Banners = () => {
                         Submit
                       </CButton>
                     </CCol>
+
+                    <CCol xs="auto">
+                      <CButton color="primary" onClick={() => setShowAddModal(true)}>
+                        Add
+                      </CButton>
+                    </CCol>
                   </CForm>
                 </CCardBody>
               </CCard>
+              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
             </CCol>
           </CCardHeader>
           <CCardBody>
@@ -142,7 +217,24 @@ const Banners = () => {
                         <CTableDataCell>{banner.image_orientation}</CTableDataCell>
                         <CTableDataCell>{banner.status ? 'true' : 'false'}</CTableDataCell>
                         <CTableDataCell>{banner.bannerable.name}</CTableDataCell>
-                        <CTableDataCell>{banner.bannerable.category.name}</CTableDataCell>
+                        <CTableDataCell>
+                          {banner.bannerable.categories && banner.bannerable.categories.length > 0 ? (
+                            banner.bannerable.categories.map((category) => (
+                              <span
+                                key={category.id}
+                                style={{
+                                  marginRight: '5px',
+                                  display: 'inline-block',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {' #' + category.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span>No Categories</span>
+                          )}
+                        </CTableDataCell>
                       </CTableRow>
                     ))}
                   </CTableBody>
@@ -175,6 +267,35 @@ const Banners = () => {
           </CCardBody>
         </CCard>
       </CCol>
+      <CModal visible={showAddModal} onClose={() => setShowAddModal(false)}>
+        <CModalHeader onClose={() => setShowAddModal(false)}>
+          <CModalTitle>Add Bonus Type</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <CForm>
+            <CFormLabel htmlFor="name">Name</CFormLabel>
+            <CFormInput id="name" name="name" value={formData.name} onChange={handleInputChange} />
+            <CFormLabel htmlFor="image">Image</CFormLabel>
+            <CFormInput id="image" name="image" value={formData.image} onChange={handleInputChange} />
+            <CFormLabel htmlFor="start_date">Start Date</CFormLabel>
+            <CFormInput id="start_date" name="start_date" value={formData.start_date} onChange={handleInputChange} />
+            <CFormLabel htmlFor="banner_days">Banner Days</CFormLabel>
+            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="bannerDaysDD" label="Duration" filter={[{}]}/>
+            <CFormLabel htmlFor="level">Level</CFormLabel>
+            <CFormInput id="level" name="level" value={formData.level} onChange={handleInputChange} />
+            <CFormLabel htmlFor="image_orientation">Image Orientation</CFormLabel>
+            <CFormInput id="image_orientation" name="image_orientation" value={formData.image_orientation} onChange={handleInputChange} />
+            <CFormLabel htmlFor="status">Status</CFormLabel>
+            <CFormInput id="status" name="status" value={formData.status} onChange={handleInputChange} />
+            <CFormLabel htmlFor="bannerable_type">Bannerable Type</CFormLabel>
+            <CFormInput id="bannerable_type" name="bannerable_type" value={formData.bannerable_type} onChange={handleInputChange} />
+          </CForm>
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowAddModal(false)}>Close</CButton>
+          <CButton color="primary" onClick={handleAddBanners}>Add</CButton>
+        </CModalFooter>
+      </CModal>
     </CRow>
   )
 }

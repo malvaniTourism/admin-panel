@@ -51,6 +51,13 @@ const Queries = () => {
     setLoading(true);
     try {
       const data = await apiService('POST', `getQueries?page=${page}`, {});
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setQueries(data.data.data || []);
       setLinks(data.data.links || []);
       setTotalPages(data.data.last_page || 1);
@@ -70,7 +77,14 @@ const Queries = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'updateQuery', formData);
+      const data = await apiService('POST', 'updateQuery', formData);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       fetchQueries(currentPage);
     } catch (error) {
       console.error('Error updating category:', error);

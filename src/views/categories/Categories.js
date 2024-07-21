@@ -63,6 +63,7 @@ const Categories = () => {
 
   const fetchCategories = async (page) => {
     const form = new FormData();
+    form.append('apitype', 'list');
     if (formData.parent_id) form.append('parent_id', formData.parent_id);
     if (formData.status) form.append('status', formData.status);
 
@@ -106,7 +107,14 @@ const Categories = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'addCategory', form);
+      const data = await apiService('POST', 'addCategory', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setShowAddModal(false);
       fetchCategories(currentPage);
     } catch (error) {
@@ -127,7 +135,14 @@ const Categories = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'updateCategory', form);
+      const data = await apiService('POST', 'updateCategory', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setShowEditModal(false);
       fetchCategories(currentPage);
     } catch (error) {
@@ -141,7 +156,14 @@ const Categories = () => {
   const handleDeleteCategory = async (id) => {
     setLoading(true);
     try {
-      await apiService('POST', 'deleteCategory', { id });
+      const data = await apiService('POST', 'deleteCategory', { id });
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       fetchCategories(currentPage);
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -170,7 +192,14 @@ const Categories = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'updateCategory', formData);
+      const data = await apiService('POST', 'updateCategory', formData);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setCategories(prevCategories =>
         prevCategories.map(category =>
           category.id === id ? { ...category, status: status } : category
@@ -218,6 +247,7 @@ const Categories = () => {
                         onChange={handleSrcDropdownChange}
                         endpoint="listcategories"
                         label="Categories"
+                        filter={[{}]}
                       />
                     </CCol>
                     <CCol sm={3}>

@@ -38,6 +38,7 @@ const Routes = () => {
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -57,7 +58,6 @@ const Routes = () => {
     search: ''
   });
 
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchRoutes(currentPage);
@@ -120,7 +120,14 @@ const Routes = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'addCategory', form);
+      const data = await apiService('POST', 'addCategory', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setShowAddModal(false);
       fetchRoutes(currentPage);
     } catch (error) {
@@ -142,7 +149,14 @@ const Routes = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'updateRoute', form);
+      const data = await apiService('POST', 'updateRoute', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setShowEditModal(false);
       fetchRoutes(currentPage);
     } catch (error) {
@@ -156,7 +170,14 @@ const Routes = () => {
   const handleDeleteRoute = async (id) => {
     setLoading(true);
     try {
-      await apiService('POST', 'deleteRoute', { id });
+      const data = await apiService('POST', 'deleteRoute', { id });
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       fetchRoutes(currentPage);
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -236,6 +257,7 @@ const Routes = () => {
                         onChange={handleSrcDropdownChange}
                         endpoint="sites"
                         label="Source Place"
+                        filter={[{ type: 'bus' }]}
                       />
                     </CCol>
                     <CCol sm={3}>
@@ -243,6 +265,7 @@ const Routes = () => {
                         onChange={handleDestDropdownChange}
                         endpoint="sites"
                         label="Destination Place"
+                        filter={[{ type: 'bus' }]}
                       />
                     </CCol>
                     <CCol xs="auto">
@@ -290,8 +313,8 @@ const Routes = () => {
                       <CTableRow key={route.id}>
                         <CTableDataCell>{index + 1}</CTableDataCell>
                         <CTableDataCell>{route.name}</CTableDataCell>
-                        <CTableDataCell>{route.source_place.name + ' (' + route.source_place.category.name + ')'}</CTableDataCell>
-                        <CTableDataCell>{route.destination_place.name + ' (' + route.destination_place.category.name + ')'}</CTableDataCell>
+                        <CTableDataCell>{route.source_place.name}</CTableDataCell>
+                        <CTableDataCell>{route.destination_place.name}</CTableDataCell>
                         <CTableDataCell>{route.bus_type.type}</CTableDataCell>
                         <CTableDataCell>{route.description}</CTableDataCell>
                         <CTableDataCell>{route.distance + ' KM'}</CTableDataCell>
@@ -338,20 +361,11 @@ const Routes = () => {
             <CFormLabel htmlFor="description">Description</CFormLabel>
             <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
 
-            <CCol sm={3}>
-              <DropdownSearch
-                onChange={handleSrcDropdownChange}
-                endpoint="sites"
-                label="Source Place"
-              />
-            </CCol>
-            <CCol sm={3}>
-              <DropdownSearch
-                onChange={handleDestDropdownChange}
-                endpoint="sites"
-                label="Destination Place"
-              />
-            </CCol>
+            <CFormLabel htmlFor="Source">Source</CFormLabel>
+            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="sites" label="Source Place" filter={[{ type: 'bus' }]} />
+
+            <CFormLabel htmlFor="destination">Destination</CFormLabel>
+            <DropdownSearch onChange={handleDestDropdownChange} endpoint="sites" label="Destination Place" filter={[{ type: 'bus' }]} />
 
             <CFormLabel htmlFor="bus_type_id">Bus Type</CFormLabel>
             <CFormInput id="bus_type_id" name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />
@@ -401,20 +415,11 @@ const Routes = () => {
             <CFormLabel htmlFor="description">Description</CFormLabel>
             <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
 
-            <CCol sm={3}>
-              <DropdownSearch
-                onChange={handleSrcDropdownChange}
-                endpoint="sites"
-                label="Source Place"
-              />
-            </CCol>
-            <CCol sm={3}>
-              <DropdownSearch
-                onChange={handleDestDropdownChange}
-                endpoint="sites"
-                label="Destination Place"
-              />
-            </CCol>
+            <CFormLabel htmlFor="Source">Source</CFormLabel>
+            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="sites" label="Source Place" filter={[{ type: 'bus' }]} />
+
+            <CFormLabel htmlFor="destination">Destination</CFormLabel>
+            <DropdownSearch onChange={handleDestDropdownChange} endpoint="sites" label="Destination Place" filter={[{ type: 'bus' }]} />
 
             <CFormLabel htmlFor="bus_type_id">Bus Type</CFormLabel>
             <CFormInput id="bus_type_id" name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />

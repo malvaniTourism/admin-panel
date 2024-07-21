@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import apiService from 'src/services/apiService';
 
 const DropdownSearch = (props) => {
-  const { onChange, endpoint, label } = props;
+  const { onChange, endpoint, label, filter, valueKey = 'id' } = props;
 
   const [selectedOption, setSelectedOption] = useState(null);
   const [options, setOptions] = useState([]);
@@ -15,21 +15,26 @@ const DropdownSearch = (props) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchRoutesDD(currentPage, endpoint, searchTerm);
-  }, [currentPage, endpoint, searchTerm]);
+    fetchRoutesDD(currentPage, endpoint, searchTerm, filter);
+  }, [currentPage, endpoint, searchTerm, filter]);
 
-  const fetchRoutesDD = async (page, endpoint, search) => {
+  const fetchRoutesDD = async (page, endpoint, search, filter) => {
     const form = new FormData();
     if (search) form.append('search', search);
     form.append('apitype', 'dropdown');
-    form.append('type', 'bus');
+    
+    filter.forEach(item => {
+      Object.entries(item).forEach(([key, value]) => {
+        form.append(key, value);
+      });
+    });
 
     setLoading(true);
     try {
       const response = await apiService('POST', `${endpoint}?page=${page}`, form);
       const data = response.data.data || [];
       const mappedOptions = data.map(route => ({
-        value: route.id,
+        value: route[valueKey],
         label: route.name
       }));
       setOptions(mappedOptions);
@@ -85,6 +90,8 @@ DropdownSearch.propTypes = {
   onChange: PropTypes.func,
   endpoint: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
+  filter: PropTypes.array.isRequired,
+  valueKey: PropTypes.string,
 };
 
 export default React.memo(DropdownSearch);

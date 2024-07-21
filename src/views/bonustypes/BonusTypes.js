@@ -64,6 +64,13 @@ const BonusTypes = () => {
     setLoading(true);
     try {
       const data = await apiService('POST', `listBonusTypes?page=${page}`, {});
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setBonusTypes(data.data.data || []);
       setTotalPages(data.data.last_page || 1);
     } catch (error) {
@@ -83,7 +90,14 @@ const BonusTypes = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'addBonusType', form);
+      const data = await apiService('POST', 'addBonusType', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setShowAddModal(false);
       fetchBonusTypes(currentPage);
     } catch (error) {
@@ -104,7 +118,14 @@ const BonusTypes = () => {
 
     setLoading(true);
     try {
-      await apiService('POST', 'updateBonusType', form);
+      const data = await apiService('POST', 'updateBonusType', form);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       setShowEditModal(false);
       fetchBonusTypes(currentPage);
     } catch (error) {
@@ -118,7 +139,14 @@ const BonusTypes = () => {
   const handleDeleteBonusType = async (id) => {
     setLoading(true);
     try {
-      await apiService('POST', 'deleteBonusType', { id });
+      const data = await apiService('POST', 'deleteBonusType', { id });
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
       fetchBonusTypes(currentPage);
     } catch (error) {
       console.error('Error deleting Bonus Type:', error);
