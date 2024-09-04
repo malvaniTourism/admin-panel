@@ -1,5 +1,7 @@
 // src/endpoint.js
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const FTP_BASE_URL = import.meta.env.VITE_FTP_BASE_URL;
+const mode = import.meta.env.MODE
+
+const API_BASE_URL = import.meta.env[`VITE_API_BASE_URL_${mode.toUpperCase()}`];
+const FTP_BASE_URL = import.meta.env[`VITE_FTP_BASE_URL_${mode.toUpperCase()}`];
 
 export { API_BASE_URL, FTP_BASE_URL };

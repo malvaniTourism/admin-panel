@@ -6,8 +6,14 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export default defineConfig(() => {
-  const backendUrl = process.env.VITE_API_BASE_URL;
+export default defineConfig(({ mode }) => {
+  console.log(`Running in ${mode} mode`);
+
+  // Set the backend URL based on the environment
+  const backendUrl = process.env[`VITE_API_BASE_URL_${mode.toUpperCase()}`] || process.env.VITE_API_BASE_URL;
+
+  console.log(`Backend URL: ${backendUrl}`);
+
   return {
     base: './',
     build: {
