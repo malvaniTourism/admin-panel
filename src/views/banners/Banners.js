@@ -24,10 +24,13 @@ import {
   CModalHeader,
   CModalTitle,
   CModalBody,
-  CModalFooter
+  CModalFooter,
+  CImage
 } from '@coreui/react'
 import apiService from 'src/services/apiService';
-import DropdownSearch from '../../components/DropdownSearch';
+import DropdownStatic from '../../components/DropdownStatic';
+import DateChooser from '../../components/DateChooser'; // Adjust the path as needed
+import { FTP_BASE_URL } from 'src/services/endpoints';
 
 const Banners = () => {
   const [banners, setBanners] = useState([])
@@ -122,12 +125,22 @@ const Banners = () => {
     });
   };
 
-
   const handleSrcDropdownChange = (id) => {
     console.log(id);
     setFormData({ ...formData, parent_id: id });
     // You can add additional logic here if needed
   };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    setFormData({ ...formData, [name]: files[0] });
+  };
+
+  const handleDateChange = (formattedDate) => {
+    console.log('Selected Date:', formattedDate);
+    setFormData({ ...formData, start_date: formattedDate });
+  };
+
   return (
     <CRow>
       <CCol xs={12}>
@@ -210,7 +223,7 @@ const Banners = () => {
                       <CTableRow key={banner.id}>
                         <CTableHeaderCell scope="row">{index + 1}</CTableHeaderCell>
                         <CTableDataCell>{banner.name}</CTableDataCell>
-                        <CTableDataCell>{banner.image}</CTableDataCell>
+                        <CTableDataCell>{banner.image ? <CImage src={FTP_BASE_URL + banner.image} alt={banner.image} width="50" /> : 'No Image'}</CTableDataCell>
                         <CTableDataCell>{banner.start_date}</CTableDataCell>
                         <CTableDataCell>{banner.duration}</CTableDataCell>
                         <CTableDataCell>{banner.level}</CTableDataCell>
@@ -276,17 +289,19 @@ const Banners = () => {
             <CFormLabel htmlFor="name">Name</CFormLabel>
             <CFormInput id="name" name="name" value={formData.name} onChange={handleInputChange} />
             <CFormLabel htmlFor="image">Image</CFormLabel>
-            <CFormInput id="image" name="image" value={formData.image} onChange={handleInputChange} />
+            <CFormInput type="file" id="image" name="image" onChange={handleFileChange} />
             <CFormLabel htmlFor="start_date">Start Date</CFormLabel>
-            <CFormInput id="start_date" name="start_date" value={formData.start_date} onChange={handleInputChange} />
+            <DateChooser onChange={handleDateChange} />
+
             <CFormLabel htmlFor="banner_days">Banner Days</CFormLabel>
-            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="bannerDaysDD" label="Duration" filter={[{}]}/>
+            <DropdownStatic onChange={handleSrcDropdownChange} endpoint="bannerDaysDD" label="Days" filter={[{}]} />
+            
             <CFormLabel htmlFor="level">Level</CFormLabel>
-            <CFormInput id="level" name="level" value={formData.level} onChange={handleInputChange} />
+            <DropdownStatic onChange={handleSrcDropdownChange} endpoint="bannerLevelsDD" label="Level" filter={[{}]} />
+
             <CFormLabel htmlFor="image_orientation">Image Orientation</CFormLabel>
-            <CFormInput id="image_orientation" name="image_orientation" value={formData.image_orientation} onChange={handleInputChange} />
-            <CFormLabel htmlFor="status">Status</CFormLabel>
-            <CFormInput id="status" name="status" value={formData.status} onChange={handleInputChange} />
+            <DropdownStatic onChange={handleSrcDropdownChange} endpoint="bannerImageOrientationDD" label="Orientation" filter={[{}]} />            
+          
             <CFormLabel htmlFor="bannerable_type">Bannerable Type</CFormLabel>
             <CFormInput id="bannerable_type" name="bannerable_type" value={formData.bannerable_type} onChange={handleInputChange} />
           </CForm>

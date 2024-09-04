@@ -57,7 +57,7 @@ const _nav = [
   {
     component: CNavItem,
     name: 'Gallery',
-    to: '/theme/gallery',
+    to: '/gallery',
     icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
   },
   {
@@ -83,7 +83,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Routes Stops',
-        to: '/theme/routestops',
+        to: '/routestops',
       },
     ],
   },

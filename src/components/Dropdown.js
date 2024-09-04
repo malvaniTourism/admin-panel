@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { CFormSelect } from '@coreui/react';
 import apiService from 'src/services/apiService'; // Import your API service
 
-const DropdownSearch = (props) => {
+const Dropdown = (props) => {
   const { onChange, endpoint,label } = props; // Destructure props to get onChange function, endpoint, and queryParams
 
   const [routes, setRoutes] = useState([]);
@@ -76,10 +76,10 @@ const DropdownSearch = (props) => {
   );
 };
 
-DropdownSearch.propTypes = {
+Dropdown.propTypes = {
   onChange: PropTypes.func, // PropType for onChange function, if needed
   endpoint: PropTypes.string.isRequired, // PropType for API endpoint (required)
   label: PropTypes.string.isRequired,
 };
 
-export default React.memo(DropdownSearch);
+export default React.memo(Dropdown);

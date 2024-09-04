@@ -25,7 +25,10 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CAlert
+  CAlert,
+  CListGroup,
+  CListGroupItem,
+  CBadge
 } from '@coreui/react';
 import apiService from 'src/services/apiService';
 import DropdownSearch from '../../components/DropdownSearch';
@@ -39,6 +42,9 @@ const Routes = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [error, setError] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [selectedName, setSelectedName] = useState('');
+  const [selectedRouteStops, setSelectedRouteStops] = useState([]);
   const [formData, setFormData] = useState({
     id: '',
     name: '',
@@ -58,6 +64,12 @@ const Routes = () => {
     search: ''
   });
 
+  const handleNameClick = (name, stops) => {
+    setSelectedName(name);
+    console.log(stops);
+    setSelectedRouteStops(stops);
+    setVisible(true);
+  };
 
   useEffect(() => {
     fetchRoutes(currentPage);
@@ -79,6 +91,7 @@ const Routes = () => {
     if (formData.per_page) form.append('per_page', formData.per_page);
 
     form.append('apitype', 'list');
+    form.append('with_stops', 1);
 
     setLoading(true);
     try {
@@ -312,7 +325,7 @@ const Routes = () => {
                     {routes.map((route, index) => (
                       <CTableRow key={route.id}>
                         <CTableDataCell>{index + 1}</CTableDataCell>
-                        <CTableDataCell>{route.name}</CTableDataCell>
+                        <CTableDataCell onClick={() => handleNameClick(route.name, route.route_stops)} style={{ cursor: 'pointer' }}>{route.name}</CTableDataCell>
                         <CTableDataCell>{route.source_place.name}</CTableDataCell>
                         <CTableDataCell>{route.destination_place.name}</CTableDataCell>
                         <CTableDataCell>{route.bus_type.type}</CTableDataCell>
@@ -349,6 +362,43 @@ const Routes = () => {
           </CCardBody>
         </CCard>
       </CCol>
+      <CModal visible={visible} onClose={() => setVisible(false)} fullscreen >
+        <CModalHeader onClose={() => setVisible(false)}>
+          <CModalTitle>{selectedName}</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <CTable striped bordered hover responsive>
+            <CTableHead>
+              <CTableRow>
+                <CTableHeaderCell>#</CTableHeaderCell>
+                <CTableHeaderCell>Serial No</CTableHeaderCell>
+                <CTableHeaderCell>Route No</CTableHeaderCell>
+                <CTableHeaderCell>Stop Name</CTableHeaderCell>
+                <CTableHeaderCell>Depart At</CTableHeaderCell>
+                <CTableHeaderCell>Arrived At</CTableHeaderCell>
+                <CTableHeaderCell>Delayed Time (min)</CTableHeaderCell>
+                <CTableHeaderCell>Distance (km)</CTableHeaderCell>
+              </CTableRow>
+            </CTableHead>
+            <CTableBody>
+              {selectedRouteStops.map((stop, index) => (
+                <CTableRow key={index}>
+                  <CTableDataCell>{index + 1}</CTableDataCell>
+                  <CTableDataCell>{stop.serial_no}</CTableDataCell>
+                  <CTableDataCell>{stop.route_id}</CTableDataCell>
+                  <CTableDataCell>{stop.site.name}</CTableDataCell>
+                  <CTableDataCell>{stop.dept_time}</CTableDataCell>
+                  <CTableDataCell>{stop.arr_time}</CTableDataCell>
+                  <CTableDataCell>{stop.delayed_time}</CTableDataCell>
+                  <CTableDataCell>{stop.distance}</CTableDataCell>
+                  {/* <CTableDataCell><CBadge color="primary" shape="rounded-pill">14</CBadge></CTableDataCell> */}
+                </CTableRow>
+              ))}
+            </CTableBody>
+          </CTable>
+        </CModalBody>
+      </CModal>
+
       <CModal visible={showAddModal} onClose={() => setShowAddModal(false)}>
         <CModalHeader onClose={() => setShowAddModal(false)}>
           <CModalTitle>Add Category</CModalTitle>

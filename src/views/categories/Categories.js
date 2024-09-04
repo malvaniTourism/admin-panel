@@ -41,6 +41,7 @@ const Categories = () => {
   const [formData, setFormData] = useState({
     id: '',
     name: '',
+    parent_id: '',
     description: '',
     icon: null,
     status: false,
@@ -100,6 +101,7 @@ const Categories = () => {
     const form = new FormData();
     if (formData.id) form.append('id', formData.id);
     if (formData.name) form.append('name', formData.name);
+    if (formData.parent_id) form.append('parent_id', formData.parent_id);
     if (formData.description) form.append('description', formData.description);
     if (formData.icon) form.append('icon', formData.icon);
     form.append('status', formData.status ? '1' : '0');
@@ -129,6 +131,7 @@ const Categories = () => {
     const form = new FormData();
     if (formData.id) form.append('id', formData.id);
     if (formData.name) form.append('name', formData.name);
+    if (formData.parent_id) form.append('parent_id', formData.parent_id);
     if (formData.description) form.append('description', formData.description);
     if (formData.icon) form.append('icon', formData.icon);
     if (formData.meta_data) form.append('meta_data', formData.meta_data);
@@ -296,7 +299,7 @@ const Categories = () => {
                         <CTableDataCell>{category.name}</CTableDataCell>
                         <CTableDataCell>{category.description}</CTableDataCell>
                         <CTableDataCell>
-                          {category.icon ? <CImage src={"https://ftp.dev.tourkokan.com/" + category.icon} alt={category.name} width="50" /> : 'No Image'}
+                          {category.icon ? <CImage src={category.icon} alt={category.name} width="50" /> : 'No Image'}
                         </CTableDataCell>
                         {/* <CTableDataCell>{category.status ? 'Active' : 'Inactive'}</CTableDataCell> */}
                         <CTableDataCell>
@@ -340,6 +343,8 @@ const Categories = () => {
           <CForm>
             <CFormLabel htmlFor="name">Name</CFormLabel>
             <CFormInput id="name" name="name" value={formData.name} onChange={handleInputChange} />
+            <CFormLabel htmlFor="parent_id">Parent Catgeory</CFormLabel>
+            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="listcategories" label="Parent Catgeory" filter={[{}]} />
             <CFormLabel htmlFor="description">Description</CFormLabel>
             <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
             <CFormLabel htmlFor="icon">Icon</CFormLabel>

@@ -30,6 +30,8 @@ import {
 import apiService from 'src/services/apiService';
 import DropdownSearch from '../../components/DropdownSearch';
 import MultiSelectDropdown from '../../components/MultiSelectDropdown';
+import ExpandableText from '../../components/ExpandableText'; // Adjust the import path as needed
+import { FTP_BASE_URL } from 'src/services/endpoints';
 
 const Sites = () => {
   const [sites, setSites] = useState([]);
@@ -412,13 +414,16 @@ const Sites = () => {
                         </CTableDataCell>
                         <CTableDataCell>{site.bus_stop_type}</CTableDataCell>
                         <CTableDataCell>{site.tag_line}</CTableDataCell>
-                        <CTableDataCell>{site.description}</CTableDataCell>
+                        {/* <CTableDataCell>{site.description}</CTableDataCell> */}
                         <CTableDataCell>
-                          {site.icon ? <CImage src={"https://ftp.dev.tourkokan.com/" + site.icon} alt={site.icon} width="50" /> : 'No Image'}
+                          <ExpandableText text={site.description} />
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          {site.icon ? <CImage src={FTP_BASE_URL + site.icon} alt={site.icon} width="50" /> : 'No Image'}
                         </CTableDataCell> <CTableDataCell>
-                          {site.logo ? <CImage src={"https://ftp.dev.tourkokan.com/" + site.logo} alt={site.logo} width="50" /> : 'No Image'}
+                          {site.logo ? <CImage src={FTP_BASE_URL + site.logo} alt={site.logo} width="50" /> : 'No Image'}
                         </CTableDataCell> <CTableDataCell>
-                          {site.image ? <CImage src={"https://ftp.dev.tourkokan.com/" + site.image} alt={site.image} width="50" /> : 'No Image'}
+                          {site.image ? <CImage src={FTP_BASE_URL + site.image} alt={site.image} width="50" /> : 'No Image'}
                         </CTableDataCell>
                         <CTableDataCell>{site.domain_name}</CTableDataCell>
                         <CTableDataCell>{site.status}</CTableDataCell>
@@ -530,7 +535,7 @@ const Sites = () => {
 
       <CModal visible={showEditModal} onClose={() => setShowEditModal(false)}>
         <CModalHeader onClose={() => setShowEditModal(false)}>
-          <CModalTitle>Add Site</CModalTitle>
+          <CModalTitle>Edit Site</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CForm>

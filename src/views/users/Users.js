@@ -30,6 +30,7 @@ import {
 } from '@coreui/react';
 import apiService from 'src/services/apiService';
 import DropdownSearch from '../../components/DropdownSearch';
+import { FTP_BASE_URL } from 'src/services/endpoints';
 
 const Users = () => {
   const [queries, setQueries] = useState([]);
@@ -159,7 +160,7 @@ const Users = () => {
                         <CTableDataCell>{queries.gender}</CTableDataCell>
                         <CTableDataCell>{queries.dob}</CTableDataCell>
                         <CTableDataCell>
-                          {queries.profile_picture ? <CImage src={"https://ftp.dev.tourkokan.com/" + queries.profile_picture} alt={queries.name} width="50" /> : 'No Image'}
+                          {queries.profile_picture ? <CImage src={FTP_BASE_URL + queries.profile_picture} alt={queries.name} width="50" /> : 'No Image'}
                         </CTableDataCell>
                         <CTableDataCell>{queries.created_at}</CTableDataCell>
                         <CTableDataCell>{queries.updated_at}</CTableDataCell>

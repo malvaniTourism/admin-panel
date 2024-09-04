@@ -1,3 +1,5 @@
+import { API_BASE_URL, FTP_BASE_URL } from 'src/services/endpoints';
+
 const API_URL = '/api';
 
 const handleResponse = async (response) => {
