@@ -469,7 +469,7 @@ const Sites = () => {
             <DropdownSearch onChange={handleCityDropdownChange} endpoint="sites" label="Cities" filter={[{}]} />
 
             <CFormLabel htmlFor="name">Categories</CFormLabel>
-            <MultiSelectDropdown onChange={handleCategoryChange} endpoint="listcategories" label="Categories" filter={[{ global: 1 }]} />
+            <MultiSelectDropdown onChange={handleCategoryChange} endpoint="listcategories" label="Categories" filter={[{ apitype: "dropdown" }]} />
 
             <CFormLabel htmlFor="bus_stop_type">Bus Stop Type</CFormLabel>
             <CFormInput id="bus_stop_type" name="bus_stop_type" value={formData.bus_stop_type} onChange={handleInputChange} />

@@ -30,6 +30,7 @@ import {
 } from '@coreui/react';
 import apiService from 'src/services/apiService';
 import DropdownSearch from '../../components/DropdownSearch';
+import { FTP_BASE_URL } from 'src/services/endpoints';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -299,7 +300,7 @@ const Categories = () => {
                         <CTableDataCell>{category.name}</CTableDataCell>
                         <CTableDataCell>{category.description}</CTableDataCell>
                         <CTableDataCell>
-                          {category.icon ? <CImage src={category.icon} alt={category.name} width="50" /> : 'No Image'}
+                          {category.icon ? <CImage src={FTP_BASE_URL + category.icon} alt={category.icon} width="50" /> : 'No Image'}
                         </CTableDataCell>
                         {/* <CTableDataCell>{category.status ? 'Active' : 'Inactive'}</CTableDataCell> */}
                         <CTableDataCell>

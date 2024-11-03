@@ -9,6 +9,9 @@ dotenv.config();
 export default defineConfig(({ mode }) => {
   console.log(`Running in ${mode} mode`);
 
+  const args = process.argv.slice(2);
+  const modeArg = args.find(arg => arg.startsWith('--mode='));
+
   // Set the backend URL based on the environment
   const backendUrl = process.env[`VITE_API_BASE_URL_${mode.toUpperCase()}`] || process.env.VITE_API_BASE_URL;
 
