@@ -159,10 +159,13 @@ const Routes = () => {
     if (formData.icon) form.append('icon', formData.icon);
     form.append('status', formData.status ? '1' : '0');
     if (formData.meta_data) form.append('meta_data', formData.meta_data);
+    if (formData.start_time) form.append('start_time', formData.start_time);
+    if (formData.end_time) form.append('end_time', formData.end_time);
+    if (formData.distance) form.append('distance', formData.distance);
 
     setLoading(true);
     try {
-      const data = await apiService('POST', 'updateRoute', form);
+      const data = await apiService('POST', 'routesUpdate', form);
       if (!data.success) {
         // Format the error messages from backend
         const errorMessages = Object.values(data.message).flat().join(', ');

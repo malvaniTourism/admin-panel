@@ -201,6 +201,7 @@ const RouteStops = () => {
                     <CTableHeaderCell>Arrived At</CTableHeaderCell>
                     <CTableHeaderCell>Delayed Time (min)</CTableHeaderCell>
                     <CTableHeaderCell>Distance (km)</CTableHeaderCell>
+                    <CTableHeaderCell>Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -241,8 +242,8 @@ const RouteStops = () => {
                       <CTableDataCell>{stop.delayed_time || ""}</CTableDataCell>
                       <CTableDataCell>{stop.distance || ""}</CTableDataCell>
                       <CTableDataCell>
-                          {/* <CButton color="warning" size="sm" onClick={() => openEditModal(site)}>Edit</CButton>{' '} */}
-                          <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(site.id)}>Delete</CButton>
+                          {/* <CButton color="warning" size="sm" onClick={() => openEditModal(stop)}>Edit</CButton>{' '} */}
+                          <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(stop.id)}>Delete</CButton>
                       </CTableDataCell>
                     </CTableRow>
                   ))}
