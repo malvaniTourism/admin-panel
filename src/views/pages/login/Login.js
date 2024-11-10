@@ -28,19 +28,16 @@ const Login = () => {
 
   const showAlert = (errorMessage) => {
     setError(errorMessage);
+    setTimeout(() => setError(''), 5000); // Auto-dismiss error alert after 5 seconds
   };
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setLoading(true);
     try {
-      const response = await apiService('POST', 'auth/login', {
-        email,
-        password,
-      });
-
-      if (response.success == false) {
-        showAlert(response?.message|| 'Something went wrong');
+      const response = await apiService('POST', 'auth/login', { email, password });
+      if (!response.success) {
+        showAlert(response?.message || 'Something went wrong');
         return;
       }
       localStorage.setItem('token', response.data.access_token);
@@ -64,7 +61,11 @@ const Login = () => {
                   <CForm onSubmit={handleLogin}>
                     <h1>Login</h1>
                     <p className="text-body-secondary">Sign In to your account</p>
-                    {error && <CAlert color="danger" dismissible onClose={() => setError('')}>{error}</CAlert>}
+                    {error && (
+                      <CAlert color="danger" dismissible onClose={() => setError('')}>
+                        {error}
+                      </CAlert>
+                    )}
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />

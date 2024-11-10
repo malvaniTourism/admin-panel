@@ -1,7 +1,17 @@
-import React from 'react'
-import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
+import React, { useEffect } from 'react'
+import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index';
+import { Link, useNavigate } from 'react-router-dom';
 
 const DefaultLayout = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const myToken = localStorage.getItem('token');
+    if (!myToken) {
+      navigate('/login')
+    }
+  }, [])
+
   return (
     <div>
       <AppSidebar />
