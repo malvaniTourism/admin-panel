@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   CCard,
   CCardBody,
@@ -27,8 +27,9 @@ const RouteStops = () => {
   const [formData, setFormData] = useState({
     search: '',
     source_place_id: '',
-    // other fields as needed
   });
+  const [editableCell, setEditableCell] = useState({ rowIndex: null, colIndex: null });
+  const [updatedData, setUpdatedData] = useState([]); // To track changes in route stops
 
   const showAlert = (errorMessage) => {
     setError(errorMessage);
@@ -64,9 +65,79 @@ const RouteStops = () => {
     fetchRouteStops(payload);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const handleInputChange = (e, rowIndex, colIndex) => {
+    const value = e.target.value;
+    const updatedRows = [...routeStops.route_stops];
+    updatedRows[rowIndex][colIndex] = value; // Update the value of the corresponding cell
+    setRouteStops((prevState) => ({ ...prevState, route_stops: updatedRows }));
+    setUpdatedData(updatedRows); // Keep track of the changes
+  };
+
+  const handleCellClick = (rowIndex, colIndex) => {
+    setEditableCell({ rowIndex, colIndex }); // Set the cell that is being edited
+  };
+
+  const handleKeyDown = (e, rowIndex, colIndex) => {
+    // Handle tab key press to move to next column or row
+    if (e.key === 'Tab') {
+      e.preventDefault(); // Prevent default tab behavior (focus moving outside the table)
+
+      const lastColumnIndex = 6; // Index of last column you want (Arrive At)
+      const nextColIndex = colIndex + 1;
+      const nextRowIndex = rowIndex + 1;
+
+      // If we are at the last column of the current row
+      if (nextColIndex > lastColumnIndex) {
+        if (nextRowIndex < routeStops.route_stops.length) {
+          // Move to the first editable cell (Depart At) of the next row
+          setEditableCell({ rowIndex: nextRowIndex, colIndex: 4 });
+        }
+      } else {
+        // Otherwise, move to the next column in the same row
+        setEditableCell({ rowIndex, colIndex: nextColIndex });
+      }
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Send updated data to the API
+    const payload = updatedData; // You can structure the payload as needed
+    try {
+      const response = await apiService('POST', `updateRouteStops`, payload);
+      if (response.success) {
+        showAlert('Data updated successfully!');
+      } else {
+        showAlert(response.message || 'Something went wrong');
+      }
+    } catch (error) {
+      console.error('Error updating data:', error);
+      showAlert(error.message);
+    }
+  };
+
+  const handleDeleteRouteStop = async (id) => {
+    const form = new FormData();
+    Object.keys(formData).forEach((key) => {
+      console.log(key, formData[key]);
+    });
+    if (formData.id) form.append('id', formData.id)
+    setLoading(true);
+    try {
+      const data = await apiService('POST', 'deleteRouteStop', { id });
+      if (!data.success) {
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);
+        return;
+      }
+
+      setFormData(formData);
+      fetchRouteStops(formData);
+    } catch (error) {
+      console.error('Error deleting site:', error);
+      showAlert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSrcDropdownChange = (id) => {
@@ -133,22 +204,54 @@ const RouteStops = () => {
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {routeStops?.route_stops?.map((stop, index) => (
-                    <CTableRow key={index}>
-                      <CTableDataCell>{index + 1}</CTableDataCell>
+                  {routeStops?.route_stops?.map((stop, rowIndex) => (
+                    <CTableRow key={rowIndex}>
+                      <CTableDataCell>{rowIndex + 1}</CTableDataCell>
                       <CTableDataCell>{stop.serial_no || ""}</CTableDataCell>
                       <CTableDataCell>{stop.route_id || ""}</CTableDataCell>
                       <CTableDataCell>{stop.site?.name || ""}</CTableDataCell>
-                      <CTableDataCell>{stop.dept_time || ""}</CTableDataCell>
-                      <CTableDataCell>{stop.arr_time || ""}</CTableDataCell>
+                      <CTableDataCell
+                        onClick={() => handleCellClick(rowIndex, 4)}
+                        onKeyDown={(e) => handleKeyDown(e, rowIndex, 4)}
+                        tabIndex={0}
+                      >
+                        {editableCell.rowIndex === rowIndex && editableCell.colIndex === 4 ? (
+                          <CFormInput
+                            value={stop.dept_time || ''}
+                            onChange={(e) => handleInputChange(e, rowIndex, "dept_time")}
+                          />
+                        ) : (
+                          stop.dept_time
+                        )}
+                      </CTableDataCell>
+                      <CTableDataCell
+                        onClick={() => handleCellClick(rowIndex, 5)}
+                        onKeyDown={(e) => handleKeyDown(e, rowIndex, 5)}
+                        tabIndex={0}
+                      >
+                        {editableCell.rowIndex === rowIndex && editableCell.colIndex === 5 ? (
+                          <CFormInput
+                            value={stop.arr_time || ''}
+                            onChange={(e) => handleInputChange(e, rowIndex, "arr_time")}
+                          />
+                        ) : (
+                          stop.arr_time
+                        )}
+                      </CTableDataCell>
                       <CTableDataCell>{stop.delayed_time || ""}</CTableDataCell>
                       <CTableDataCell>{stop.distance || ""}</CTableDataCell>
+                      <CTableDataCell>
+                          {/* <CButton color="warning" size="sm" onClick={() => openEditModal(site)}>Edit</CButton>{' '} */}
+                          <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(site.id)}>Delete</CButton>
+                      </CTableDataCell>
                     </CTableRow>
                   ))}
-
                 </CTableBody>
               </CTable>
             )}
+            <CButton color="primary" onClick={handleSubmit}>
+              Save Changes
+            </CButton>
           </CCardBody>
         </CCard>
       </CCol>
