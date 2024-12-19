@@ -68,10 +68,19 @@ const RouteStops = () => {
   const handleInputChange = (e, rowIndex, colIndex) => {
     const value = e.target.value;
     const updatedRows = [...routeStops.route_stops];
-    updatedRows[rowIndex][colIndex] = value; // Update the value of the corresponding cell
+
+    updatedRows[rowIndex][colIndex] = value;
+
+    const sanitizedUpdatedRows = updatedRows.map((row) => {
+      const { site, ...rest } = row;
+      return rest; 
+    });
+
     setRouteStops((prevState) => ({ ...prevState, route_stops: updatedRows }));
-    setUpdatedData(updatedRows); // Keep track of the changes
+
+    setUpdatedData(sanitizedUpdatedRows); // Keep track of the changes excluding the "site" key
   };
+
 
   const handleCellClick = (rowIndex, colIndex) => {
     setEditableCell({ rowIndex, colIndex }); // Set the cell that is being edited
@@ -101,10 +110,13 @@ const RouteStops = () => {
 
   const handleSubmit = async () => {
     // Send updated data to the API
-    const payload = updatedData; // You can structure the payload as needed
+    const payload = {};  // Initialize the payload object
+    payload['route_stops'] = updatedData;
     try {
-      const response = await apiService('POST', `updateRouteStops`, payload);
+      const response = await apiService('POST', `massRouteStopsUpdate`, payload);
       if (response.success) {
+        setEditableCell({ rowIndex: null, colIndex: null });
+
         showAlert('Data updated successfully!');
       } else {
         showAlert(response.message || 'Something went wrong');
@@ -241,8 +253,8 @@ const RouteStops = () => {
                       <CTableDataCell>{stop.delayed_time || ""}</CTableDataCell>
                       <CTableDataCell>{stop.distance || ""}</CTableDataCell>
                       <CTableDataCell>
-                          {/* <CButton color="warning" size="sm" onClick={() => openEditModal(site)}>Edit</CButton>{' '} */}
-                          <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(site.id)}>Delete</CButton>
+                        {/* <CButton color="warning" size="sm" onClick={() => openEditModal(site)}>Edit</CButton>{' '} */}
+                        <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(site.id)}>Delete</CButton>
                       </CTableDataCell>
                     </CTableRow>
                   ))}
