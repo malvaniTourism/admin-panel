@@ -213,6 +213,7 @@ const RouteStops = () => {
                     <CTableHeaderCell>Arrived At</CTableHeaderCell>
                     <CTableHeaderCell>Delayed Time (min)</CTableHeaderCell>
                     <CTableHeaderCell>Distance (km)</CTableHeaderCell>
+                    <CTableHeaderCell>Actions</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>

@@ -141,6 +141,34 @@ const Banners = () => {
     setFormData({ ...formData, start_date: formattedDate });
   };
 
+  const handleDeleteBanner = async (id) => {
+    const form = new FormData();
+    Object.keys(formData).forEach((key) => {
+      // form.append(key, formData[key]);
+      console.log(key, formData[key]);
+    });
+    if (formData.id) form.append('id', formData.id)
+    setLoading(true);
+    try {
+      const data = await apiService('DELETE', `deleteBanner/${id}`);
+      if (!data.success) {
+        // Format the error messages from backend
+        const errorMessages = Object.values(data.message).flat().join(', ');
+        showAlert(errorMessages);  // Display all validation errors
+        return;
+      }
+
+      setFormData(formData); // Reset formData before fetching sites
+
+      fetchSites(currentPage);
+    } catch (error) {
+      console.error('Error deleting site:', error);
+      showAlert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CRow>
       <CCol xs={12}>
@@ -216,6 +244,7 @@ const Banners = () => {
                       <CTableHeaderCell scope="col">Status</CTableHeaderCell>
                       <CTableHeaderCell scope="col">Banner Owner</CTableHeaderCell>
                       <CTableHeaderCell scope="col">Banner Owner Category</CTableHeaderCell>
+                      <CTableHeaderCell scope="col">Actions</CTableHeaderCell>
                     </CTableRow>
                   </CTableHead>
                   <CTableBody>
@@ -247,6 +276,10 @@ const Banners = () => {
                           ) : (
                             <span>No Categories</span>
                           )}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <CButton color="warning" size="sm" onClick={() => openEditModal(banner)}>Edit</CButton>{' '}
+                          <CButton color="danger" size="sm" onClick={() => handleDeleteBanner(banner.id)}>Delete</CButton>
                         </CTableDataCell>
                       </CTableRow>
                     ))}
