@@ -151,34 +151,45 @@ const Routes = () => {
     }
   };
 
-  const handleEditCategory = async () => {
+  const handleEditRoute = async () => {
     const form = new FormData();
+  
+    // Append all route fields to the form
     if (formData.id) form.append('id', formData.id);
     if (formData.name) form.append('name', formData.name);
     if (formData.description) form.append('description', formData.description);
-    if (formData.icon) form.append('icon', formData.icon);
+    if (formData.source_place_id) form.append('source_place_id', formData.source_place_id);
+    if (formData.destination_place_id) form.append('destination_place_id', formData.destination_place_id);
+    if (formData.bus_type_id) form.append('bus_type_id', formData.bus_type_id);
+    if (formData.distance) form.append('distance', formData.distance);
+    if (formData.start_time) form.append('start_time', formData.start_time);
+    if (formData.end_time) form.append('end_time', formData.end_time);
+    if (formData.total_time) form.append('total_time', formData.total_time);
+    if (formData.delayed_time) form.append('delayed_time', formData.delayed_time);
+    if (formData.working_days) form.append('working_days', JSON.stringify(formData.working_days)); // Assuming working_days is an array
+    if (formData.meta_data) form.append('meta_data', JSON.stringify(formData.meta_data)); // Assuming meta_data is an object
+  
+    // Include status if necessary
     form.append('status', formData.status ? '1' : '0');
-    if (formData.meta_data) form.append('meta_data', formData.meta_data);
-
+  
     setLoading(true);
     try {
-      const data = await apiService('POST', 'updateRoute', form);
+      const data = await apiService('POST', 'routesUpdate', form);
       if (!data.success) {
-        // Format the error messages from backend
         const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages);  // Display all validation errors
+        showAlert(errorMessages); // Display all validation errors
         return;
       }
-
+  
       setShowEditModal(false);
-      fetchRoutes(currentPage);
+      fetchRoutes(currentPage); // Refresh the routes list
     } catch (error) {
-      console.error('Error updating category:', error);
+      console.error('Error updating route:', error);
       showAlert(error.message);
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const handleDeleteRoute = async (id) => {
     setLoading(true);
@@ -504,7 +515,7 @@ const Routes = () => {
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setShowEditModal(false)}>Close</CButton>
-          <CButton color="primary" onClick={handleEditCategory}>Save Changes</CButton>
+          <CButton color="primary" onClick={handleEditRoute}>Save Changes</CButton>
         </CModalFooter>
       </CModal>
     </CRow>
