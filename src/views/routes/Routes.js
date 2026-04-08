@@ -29,7 +29,7 @@ import {
 import CIcon from '@coreui/icons-react';
 import {
   cilArrowRight,
-  cilBus,
+  cilBusAlt,
   cilClock,
   cilLocationPin,
   cilPencil,
@@ -134,9 +134,6 @@ const Routes = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, icon: e.target.files[0] }));
-  };
 
   const openAddModal = () => {
     setFormData(emptyForm);
@@ -386,7 +383,7 @@ const Routes = () => {
                       </CBadge>
                       {route.bus_type?.type && (
                         <CBadge color="info" shape="rounded-pill">
-                          <CIcon icon={cilBus} size="sm" className="me-1" />{route.bus_type.type}
+                          <CIcon icon={cilBusAlt} size="sm" className="me-1" />{route.bus_type.type}
                         </CBadge>
                       )}
                     </div>

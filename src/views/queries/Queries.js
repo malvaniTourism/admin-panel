@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
 
   CBadge,
@@ -17,7 +17,7 @@ import {
   CSpinner,
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilEnvelopeClosed, cilPhone, cilUser, cilChat } from '@coreui/icons';
+import { cilEnvelopeClosed, cilPhone, cilUser, cilCommentBubble } from '@coreui/icons';
 import apiService from 'src/services/apiService';
 import AlertModal from 'src/components/AlertModal';
 import { parseApiMessage } from 'src/utils/apiMessages';
@@ -25,33 +25,51 @@ import { parseApiMessage } from 'src/utils/apiMessages';
 const Queries = () => {
   const [queries, setQueries] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTrigger, setSearchTrigger] = useState(0);
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
+  const [searchFilters, setSearchFilters] = useState({ name: '', status: '' });
+  const activeFilters = useRef(searchFilters);
 
   useEffect(() => {
     fetchQueries(currentPage);
-  }, [currentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTrigger]);
 
   const showError = (msg) => setAlert({ type: 'danger', message: msg });
   const showSuccess = (msg) => setAlert({ type: 'success', message: msg });
   const clearAlert = () => setAlert(null);
 
   const fetchQueries = async (page) => {
+    const filters = activeFilters.current;
+    const form = new FormData();
+    if (filters.name) form.append('search', filters.name);
+    if (filters.status) form.append('status', filters.status);
+
     setLoading(true);
     try {
-      const data = await apiService('POST', `getQueries?page=${page}`, {});
+      const data = await apiService('POST', `getQueries?page=${page}`, form);
       if (!data.success) {
         showError(parseApiMessage(data.message));
         return;
       }
-      setQueries(data.data.data || []);
-      setLinks(data.data.links || []);
+      const list = Array.isArray(data.data) ? data.data : (data.data.data || []);
+      setQueries(list);
+      setLinks(Array.isArray(data.data) ? [] : (data.data.links || []));
     } catch (err) {
-      console.error('Error fetching queries:', err);
       showError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = () => {
+    activeFilters.current = { ...searchFilters };
+    if (currentPage === 1) {
+      setSearchTrigger((t) => t + 1);
+    } else {
+      setCurrentPage(1);
     }
   };
 
@@ -96,21 +114,28 @@ const Queries = () => {
         {/* Search Bar */}
         <CCard className="mb-3">
           <CCardBody>
-            <CForm className="row g-3 align-items-end">
+            <CForm className="row g-3 align-items-end" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
               <CCol md={4}>
                 <CFormLabel>Name</CFormLabel>
-                <CFormInput placeholder="Search by name..." />
+                <CFormInput
+                  placeholder="Search by name..."
+                  value={searchFilters.name}
+                  onChange={(e) => setSearchFilters((p) => ({ ...p, name: e.target.value }))}
+                />
               </CCol>
               <CCol md={3}>
                 <CFormLabel>Status</CFormLabel>
-                <CFormSelect>
+                <CFormSelect
+                  value={searchFilters.status}
+                  onChange={(e) => setSearchFilters((p) => ({ ...p, status: e.target.value }))}
+                >
                   <option value="">All</option>
                   <option value="read">Read</option>
                   <option value="unread">Unread</option>
                 </CFormSelect>
               </CCol>
               <CCol md="auto">
-                <CButton color="primary">Search</CButton>
+                <CButton color="primary" type="submit">Search</CButton>
               </CCol>
             </CForm>
           </CCardBody>
@@ -169,7 +194,7 @@ const Queries = () => {
                           position: 'relative',
                         }}
                       >
-                        <CIcon icon={cilChat} size="sm" className="me-1" style={{ color: 'var(--cui-secondary-color)' }} />
+                        <CIcon icon={cilCommentBubble} size="sm" className="me-1" style={{ color: 'var(--cui-secondary-color)' }} />
                         {query.message}
                       </div>
                     )}
