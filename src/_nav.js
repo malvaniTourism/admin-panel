@@ -33,7 +33,7 @@ const _nav = [
   {
     component: CNavItem,
     name: 'App Version',
-    to: '/theme/appversion',
+    to: '/appversion',
     icon: <CIcon icon={cilDrop} customClassName="nav-icon" />,
   },
   {
@@ -49,10 +49,27 @@ const _nav = [
     icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
   },
   {
-    component: CNavItem,
-    name: 'Banners',
+    component: CNavGroup,
+    name: 'Advertising',
     to: '/banners',
-    icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'Banners',
+        to: '/banners',
+      },
+      {
+        component: CNavItem,
+        name: 'Packages',
+        to: '/banner-packages',
+      },
+      {
+        component: CNavItem,
+        name: 'Placements',
+        to: '/banner-placements',
+      },
+    ],
   },
   {
     component: CNavItem,
@@ -91,7 +108,7 @@ const _nav = [
 
   {
     component: CNavTitle,
-    name: 'MSRTC',
+    name: 'Users',
   },
   {
     component: CNavGroup,

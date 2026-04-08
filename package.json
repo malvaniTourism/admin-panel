@@ -16,6 +16,7 @@
     "build": "vite build --mode production",
     "lint": "eslint \"src/**/*.js\"",
     "serve": "vite preview",
+    "dev": "vite",
     "start": "vite",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"

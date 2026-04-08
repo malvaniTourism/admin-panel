@@ -1,209 +1,223 @@
 import React, { useEffect, useState } from 'react';
 import {
+
+  CBadge,
+  CButton,
   CCard,
   CCardBody,
-  CCardHeader,
   CCol,
-  CRow,
-  CTable,
-  CTableBody,
-  CTableDataCell,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
+  CForm,
+  CFormInput,
+  CFormLabel,
+  CFormSelect,
+  CFormSwitch,
   CPagination,
   CPaginationItem,
-  CForm,
-  CFormLabel,
-  CFormInput,
-  CFormSelect,
-  CButton,
-  CImage,
+  CRow,
   CSpinner,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CAlert,
-  CFormSwitch
 } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilEnvelopeClosed, cilPhone, cilUser, cilChat } from '@coreui/icons';
 import apiService from 'src/services/apiService';
+import AlertModal from 'src/components/AlertModal';
+import { parseApiMessage } from 'src/utils/apiMessages';
 
 const Queries = () => {
   const [queries, setQueries] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    id: '',
-    status: false,
-  });
-  const [error, setError] = useState(null);
-  const [isChecked, setIsChecked] = useState();
   const [links, setLinks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
 
   useEffect(() => {
     fetchQueries(currentPage);
   }, [currentPage]);
+
+  const showError = (msg) => setAlert({ type: 'danger', message: msg });
+  const showSuccess = (msg) => setAlert({ type: 'success', message: msg });
+  const clearAlert = () => setAlert(null);
 
   const fetchQueries = async (page) => {
     setLoading(true);
     try {
       const data = await apiService('POST', `getQueries?page=${page}`, {});
       if (!data.success) {
-        // Format the error messages from backend
-        const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages);  // Display all validation errors
+        showError(parseApiMessage(data.message));
         return;
       }
-
       setQueries(data.data.data || []);
       setLinks(data.data.links || []);
-      setTotalPages(data.data.last_page || 1);
-    } catch (error) {
-      console.error('Error fetching queries:', error);
-      showAlert(error.message);
+    } catch (err) {
+      console.error('Error fetching queries:', err);
+      showError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSwitchChange = async (id, status) => {
-    const formData = new FormData();
-    formData.append('id', id);
-    formData.append('status', status);
-    setIsChecked(!isChecked);
-
-    setLoading(true);
+  const handleSwitchChange = async (id, newStatus) => {
+    const form = new FormData();
+    form.append('id', id);
+    form.append('status', newStatus);
     try {
-      const data = await apiService('POST', 'updateQuery', formData);
+      const data = await apiService('POST', 'updateQuery', form);
       if (!data.success) {
-        // Format the error messages from backend
-        const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages);  // Display all validation errors
+        showError(parseApiMessage(data.message));
         return;
       }
-
-      fetchQueries(currentPage);
-    } catch (error) {
-      console.error('Error updating category:', error);
-      showAlert(error.message);
-    } finally {
-      setLoading(false);
+      showSuccess(data.message);
+      setQueries((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, status: newStatus } : q))
+      );
+    } catch (err) {
+      showError(err.message);
     }
   };
 
-  const renderPaginationLabel = (label) => {
-    return label.replace('&laquo;', '').replace('&raquo;', '');
-  };
+  const renderPaginationLabel = (label) =>
+    label.replace('&laquo;', '').replace('&raquo;', '').trim();
 
   const handlePaginationClick = (label) => {
-    if (label === '&laquo; Previous') {
-      setCurrentPage(currentPage - 1);
-    } else if (label === 'Next &raquo;') {
-      setCurrentPage(currentPage + 1);
-    } else {
-      setCurrentPage(parseInt(label)); // Assuming the label is numeric page number
-    }
+    const clean = renderPaginationLabel(label);
+    if (clean === 'Previous') setCurrentPage((p) => Math.max(p - 1, 1));
+    else if (clean === 'Next') setCurrentPage((p) => p + 1);
+    else setCurrentPage(parseInt(clean));
   };
-  
+
+  const statusColor = (status) => {
+    if (status === 'read') return 'success';
+    if (status === 'unread') return 'warning';
+    return 'secondary';
+  };
+
   return (
     <CRow>
       <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <CCol xs={12}>
-              <CCard className="mb-4">
-                <CCardBody>
-                  <CForm className="row gx-3 gy-2 align-items-center">
-                    <CCol sm={3}>
-                      <CFormLabel className="visually-hidden" htmlFor="specificSizeInputName">
-                        Name
-                      </CFormLabel>
-                      <CFormInput id="specificSizeInputName" placeholder="Jane Doe" />
-                    </CCol>
-                    <CCol sm={3}>
-                      <CFormLabel className="visually-hidden" htmlFor="specificSizeSelect">
-                        Preference
-                      </CFormLabel>
-                      <CFormSelect id="specificSizeSelect">
-                        <option>Status...</option>
-                        <option value="read">Read</option>
-                        <option value="unread">Unread</option>
-                      </CFormSelect>
-                    </CCol>
-                    <CCol xs="auto">
-                      <CButton color="primary" type="submit">
-                        Search
-                      </CButton>
-                    </CCol>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
-            </CCol>
-          </CCardHeader>
+        {/* Search Bar */}
+        <CCard className="mb-3">
           <CCardBody>
-            {loading ? (
-              <CSpinner color="primary" />
-            ) : (
-              <>
-                <CTable>
-                  <CTableHead>
-                    <CTableRow>
-                      <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Name</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Email</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Phone</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">message</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Status</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Query On</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Catgeory</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Actions</CTableHeaderCell>
-                    </CTableRow>
-                  </CTableHead>
-                  <CTableBody>
-                    {queries.map((queries, index) => (
-                      <CTableRow key={queries.id}>
-                        <CTableDataCell>{index + 1}</CTableDataCell>
-                        <CTableDataCell>{queries.name}</CTableDataCell>
-                        <CTableDataCell>{queries.email}</CTableDataCell>
-                        <CTableDataCell>{queries.phone}</CTableDataCell>
-                        <CTableDataCell>{queries.message}</CTableDataCell>
-                        <CTableDataCell>{queries.status}</CTableDataCell>
-                        <CTableDataCell>{queries.contactable ? queries.contactable.name : ''}</CTableDataCell>
-                        <CTableDataCell>{queries.contactable ? queries.contactable.category.name : ''}</CTableDataCell>
-                        <CTableDataCell>
-                          <CFormSwitch
-                            id={`formSwitchCheckChecked-${queries.id}`}
-                            defaultChecked
-                            disabled={queries.status === 'read'}
-                            onChange={() => handleSwitchChange(queries.id, queries.status == 'read' ? 'unread' : 'read')}
-                          />
-                        </CTableDataCell>
-                      </CTableRow>
-                    ))}
-                  </CTableBody>
-                </CTable>
-                <CPagination>
-                  {links.map((link, index) => (
-                    <CPaginationItem
-                      key={index}
-                      active={link.active}
-                      onClick={() => handlePaginationClick(link.label)}
-                      disabled={!link.url} // Assuming link.url being null means it's disabled
-                    >
-                      {renderPaginationLabel(link.label)}
-                    </CPaginationItem>
-                  ))}
-                </CPagination>
-              </>
-            )}
+            <CForm className="row g-3 align-items-end">
+              <CCol md={4}>
+                <CFormLabel>Name</CFormLabel>
+                <CFormInput placeholder="Search by name..." />
+              </CCol>
+              <CCol md={3}>
+                <CFormLabel>Status</CFormLabel>
+                <CFormSelect>
+                  <option value="">All</option>
+                  <option value="read">Read</option>
+                  <option value="unread">Unread</option>
+                </CFormSelect>
+              </CCol>
+              <CCol md="auto">
+                <CButton color="primary">Search</CButton>
+              </CCol>
+            </CForm>
           </CCardBody>
         </CCard>
+
+        {/* Query Cards */}
+        {loading ? (
+          <div className="text-center py-5"><CSpinner color="primary" /></div>
+        ) : queries.length === 0 ? (
+          <CCard><CCardBody className="text-center text-body-secondary py-5">No queries found.</CCardBody></CCard>
+        ) : (
+          queries.map((query) => (
+            <CCard key={query.id} className="mb-3">
+              <CCardBody>
+                <CRow className="align-items-start g-3">
+                  {/* Contact Info */}
+                  <CCol xs={12} md={4}>
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <div style={{
+                        width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                        backgroundColor: 'var(--cui-primary)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <CIcon icon={cilUser} style={{ color: '#fff' }} />
+                      </div>
+                      <div>
+                        <div className="d-flex align-items-center gap-2">
+                          <strong>{query.name}</strong>
+                          <CBadge color={statusColor(query.status)} shape="rounded-pill">
+                            {query.status || 'unread'}
+                          </CBadge>
+                        </div>
+                        {query.email && (
+                          <div style={{ fontSize: 12, color: 'var(--cui-secondary-color)' }}>
+                            <CIcon icon={cilEnvelopeClosed} size="sm" className="me-1" />{query.email}
+                          </div>
+                        )}
+                        {query.phone && (
+                          <div style={{ fontSize: 12, color: 'var(--cui-secondary-color)' }}>
+                            <CIcon icon={cilPhone} size="sm" className="me-1" />{query.phone}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CCol>
+
+                  {/* Message */}
+                  <CCol xs={12} md={5}>
+                    {query.message && (
+                      <div
+                        style={{
+                          backgroundColor: 'var(--cui-secondary-bg)',
+                          borderRadius: 8,
+                          padding: '10px 14px',
+                          fontSize: 13,
+                          position: 'relative',
+                        }}
+                      >
+                        <CIcon icon={cilChat} size="sm" className="me-1" style={{ color: 'var(--cui-secondary-color)' }} />
+                        {query.message}
+                      </div>
+                    )}
+                    {query.contactable && (
+                      <div className="mt-2 d-flex gap-2 align-items-center flex-wrap" style={{ fontSize: 12, color: 'var(--cui-secondary-color)' }}>
+                        <span>Query on: <strong>{query.contactable.name}</strong></span>
+                        {query.contactable.category?.name && (
+                          <CBadge color="primary" shape="rounded-pill">{query.contactable.category.name}</CBadge>
+                        )}
+                      </div>
+                    )}
+                  </CCol>
+
+                  {/* Status Toggle */}
+                  <CCol xs={12} md={3} className="d-flex flex-column align-items-end gap-2">
+                    <CFormSwitch
+                      id={`switch-${query.id}`}
+                      checked={query.status === 'read'}
+                      disabled={query.status === 'read'}
+                      onChange={() => handleSwitchChange(query.id, query.status === 'read' ? 'unread' : 'read')}
+                      label="Mark as Read"
+                    />
+                  </CCol>
+                </CRow>
+              </CCardBody>
+            </CCard>
+          ))
+        )}
+
+        {/* Pagination */}
+        {links.length > 0 && (
+          <CPagination className="mt-2">
+            {links.map((link, index) => (
+              <CPaginationItem
+                key={index}
+                active={link.active}
+                disabled={!link.url}
+                onClick={() => link.url && handlePaginationClick(link.label)}
+              >
+                {renderPaginationLabel(link.label)}
+              </CPaginationItem>
+            ))}
+          </CPagination>
+        )}
       </CCol>
-    </CRow >
+      <AlertModal alert={alert} onClose={clearAlert} />
+
+    </CRow>
   );
 };
 

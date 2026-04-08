@@ -1,151 +1,201 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
+
+  CBadge,
+  CButton,
   CCard,
   CCardBody,
-  CCardHeader,
   CCol,
+  CForm,
+  CFormInput,
+  CFormLabel,
+  CFormSelect,
+  CModal,
+  CModalBody,
+  CModalFooter,
+  CModalHeader,
+  CModalTitle,
+  CPagination,
+  CPaginationItem,
   CRow,
+  CSpinner,
   CTable,
   CTableBody,
   CTableDataCell,
   CTableHead,
   CTableHeaderCell,
   CTableRow,
-  CPagination,
-  CPaginationItem,
-  CForm,
-  CFormLabel,
-  CFormInput,
-  CFormSelect,
-  CButton,
-  CImage,
-  CSpinner,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CAlert,
-  CListGroup,
-  CListGroupItem,
-  CBadge
 } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import {
+  cilArrowRight,
+  cilBus,
+  cilClock,
+  cilLocationPin,
+  cilPencil,
+  cilSpeedometer,
+  cilTrash,
+} from '@coreui/icons';
 import apiService from 'src/services/apiService';
+import AlertModal from 'src/components/AlertModal';
 import DropdownSearch from '../../components/DropdownSearch';
+import { parseApiMessage } from 'src/utils/apiMessages';
+
+const emptyForm = {
+  id: '',
+  name: '',
+  description: '',
+  icon: null,
+  status: false,
+  meta_data: '',
+  source_place_id: '',
+  destination_place_id: '',
+  bus_type_id: '',
+  distance: '',
+  start_time: '',
+  end_time: '',
+  total_time: '',
+  delayed_time: '',
+  working_days: '',
+};
 
 const Routes = () => {
   const [routes, setRoutes] = useState([]);
   const [links, setLinks] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [searchTrigger, setSearchTrigger] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [error, setError] = useState(null);
-  const [visible, setVisible] = useState(false);
-  const [selectedName, setSelectedName] = useState('');
-  const [selectedRouteStops, setSelectedRouteStops] = useState([]);
-  const [formData, setFormData] = useState({
-    id: '',
-    name: '',
-    description: '',
-    icon: null,
-    status: false,
-    meta_data: '',
-    source_place_id: '',
-    destination_place_id: '',
-    bus_type_id: '',
-    distance: '',
-    start_time: '',
-    end_time: '',
-    total_time: '',
-    delayed_time: '',
-    working_days: '',
-    search: ''
-  });
-
-  const handleNameClick = (name, stops) => {
-    setSelectedName(name);
-    console.log(stops);
-    setSelectedRouteStops(stops);
-    setVisible(true);
-  };
+  const [showStopsModal, setShowStopsModal] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [alert, setAlert] = useState(null);
+  const [formData, setFormData] = useState(emptyForm);
+  const [searchFilters, setSearchFilters] = useState({ search: '', source_place_id: '', destination_place_id: '' });
+  const activeFilters = useRef(searchFilters);
 
   useEffect(() => {
     fetchRoutes(currentPage);
-  }, [currentPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchTrigger]);
 
-  const showAlert = (errorMessage) => {
-    setError(errorMessage);
-  };
-
-  const clearAlert = () => {
-    setError(null);
-  };
+  const showError = (msg) => setAlert({ type: 'danger', message: msg });
+  const showSuccess = (msg) => setAlert({ type: 'success', message: msg });
+  const clearAlert = () => setAlert(null);
 
   const fetchRoutes = async (page) => {
     const form = new FormData();
-    if (formData.source_place_id) form.append('source_place_id', formData.source_place_id);
-    if (formData.destination_place_id) form.append('destination_place_id', formData.destination_place_id);
-    if (formData.search) form.append('search', formData.search);
-    if (formData.per_page) form.append('per_page', formData.per_page);
-
+    const filters = activeFilters.current;
+    if (filters.source_place_id) form.append('source_place_id', filters.source_place_id);
+    if (filters.destination_place_id) form.append('destination_place_id', filters.destination_place_id);
+    if (filters.search) form.append('search', filters.search);
     form.append('apitype', 'list');
     form.append('with_stops', 1);
 
     setLoading(true);
     try {
       const data = await apiService('POST', `routes?page=${page}`, form);
-      console.log(data.message.destination_place_id);
       if (!data.success) {
-        showAlert(data.message.destination_place_id);
+        showError(parseApiMessage(data.message));
         return;
       }
-
-      setRoutes(data.data.data || []);
-      setLinks(data.data.links || []);
-      setTotalPages(data.data.last_page || 1);
-    } catch (error) {
-      console.error('Error fetching routes:', error);
-      showAlert(error.message);
+      const list = Array.isArray(data.data) ? data.data : (data.data.data || []);
+      setRoutes(list);
+      setLinks(Array.isArray(data.data) ? [] : (data.data.links || []));
+    } catch (err) {
+      console.error('Error fetching routes:', err);
+      showError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSearch = () => {
+    activeFilters.current = { ...searchFilters };
+    if (currentPage === 1) {
+      setSearchTrigger((t) => t + 1);
+    } else {
+      setCurrentPage(1);
+    }
+  };
+
+  const handlePaginationClick = (label) => {
+    const clean = label.replace('&laquo;', '').replace('&raquo;', '').trim();
+    if (clean === 'Previous') setCurrentPage((p) => Math.max(p - 1, 1));
+    else if (clean === 'Next') setCurrentPage((p) => p + 1);
+    else setCurrentPage(parseInt(clean));
+  };
+
+  const renderPaginationLabel = (label) =>
+    label.replace('&laquo;', '').replace('&raquo;', '').trim();
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e) => {
-    setFormData({ ...formData, icon: e.target.files[0] });
+    setFormData((prev) => ({ ...prev, icon: e.target.files[0] }));
+  };
+
+  const openAddModal = () => {
+    setFormData(emptyForm);
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (route) => {
+    setFormData({
+      ...emptyForm,
+      id: route.id,
+      name: route.name ?? '',
+      description: route.description ?? '',
+      source_place_id: route.source_place_id ?? '',
+      destination_place_id: route.destination_place_id ?? '',
+      bus_type_id: route.bus_type_id ?? '',
+      distance: route.distance ?? '',
+      status: route.status ?? false,
+      start_time: route.start_time ?? '',
+      end_time: route.end_time ?? '',
+      total_time: route.total_time ?? '',
+      delayed_time: route.delayed_time ?? '',
+      working_days: route.working_days ?? '',
+      meta_data: route.meta_data ?? '',
+    });
+    setShowEditModal(true);
+  };
+
+  const openStopsModal = (route) => {
+    setSelectedRoute(route);
+    setShowStopsModal(true);
   };
 
   const handleAddRoute = async () => {
     const form = new FormData();
-    if (formData.id) form.append('id', formData.id);
     if (formData.name) form.append('name', formData.name);
     if (formData.description) form.append('description', formData.description);
-    if (formData.icon) form.append('icon', formData.icon);
+    if (formData.source_place_id) form.append('source_place_id', formData.source_place_id);
+    if (formData.destination_place_id) form.append('destination_place_id', formData.destination_place_id);
+    if (formData.bus_type_id) form.append('bus_type_id', formData.bus_type_id);
+    if (formData.distance) form.append('distance', formData.distance);
+    if (formData.start_time) form.append('start_time', formData.start_time);
+    if (formData.end_time) form.append('end_time', formData.end_time);
+    if (formData.total_time) form.append('total_time', formData.total_time);
+    if (formData.delayed_time) form.append('delayed_time', formData.delayed_time);
+    if (formData.working_days) form.append('working_days', formData.working_days);
     form.append('status', formData.status ? '1' : '0');
-    if (formData.meta_data) form.append('meta_data', formData.meta_data);
 
     setLoading(true);
     try {
-      const data = await apiService('POST', 'addCategory', form);
+      const data = await apiService('POST', 'addRoute', form);
       if (!data.success) {
-        // Format the error messages from backend
-        const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages);  // Display all validation errors
+        showError(parseApiMessage(data.message));
         return;
       }
-
       setShowAddModal(false);
+      showSuccess(data.message);
       fetchRoutes(currentPage);
-    } catch (error) {
-      console.error('Error adding category:', error);
-      showAlert(error.message);
+    } catch (err) {
+      showError(err.message);
     } finally {
       setLoading(false);
     }
@@ -153,8 +203,6 @@ const Routes = () => {
 
   const handleEditRoute = async () => {
     const form = new FormData();
-  
-    // Append all route fields to the form
     if (formData.id) form.append('id', formData.id);
     if (formData.name) form.append('name', formData.name);
     if (formData.description) form.append('description', formData.description);
@@ -166,216 +214,270 @@ const Routes = () => {
     if (formData.end_time) form.append('end_time', formData.end_time);
     if (formData.total_time) form.append('total_time', formData.total_time);
     if (formData.delayed_time) form.append('delayed_time', formData.delayed_time);
-    if (formData.working_days) form.append('working_days', JSON.stringify(formData.working_days)); // Assuming working_days is an array
-    if (formData.meta_data) form.append('meta_data', JSON.stringify(formData.meta_data)); // Assuming meta_data is an object
-  
-    // Include status if necessary
+    if (formData.working_days) form.append('working_days', JSON.stringify(formData.working_days));
+    if (formData.meta_data) form.append('meta_data', JSON.stringify(formData.meta_data));
     form.append('status', formData.status ? '1' : '0');
-  
+
     setLoading(true);
     try {
       const data = await apiService('POST', 'routesUpdate', form);
       if (!data.success) {
-        const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages); // Display all validation errors
+        showError(parseApiMessage(data.message));
         return;
       }
-  
       setShowEditModal(false);
-      fetchRoutes(currentPage); // Refresh the routes list
-    } catch (error) {
-      console.error('Error updating route:', error);
-      showAlert(error.message);
+      showSuccess(data.message);
+      fetchRoutes(currentPage);
+    } catch (err) {
+      showError(err.message);
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   const handleDeleteRoute = async (id) => {
+    if (!window.confirm('Delete this route?')) return;
     setLoading(true);
     try {
       const data = await apiService('POST', 'deleteRoute', { id });
       if (!data.success) {
-        // Format the error messages from backend
-        const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages);  // Display all validation errors
+        showError(parseApiMessage(data.message));
         return;
       }
-
+      showSuccess(data.message);
       fetchRoutes(currentPage);
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      showAlert(error.message);
+    } catch (err) {
+      showError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const openEditModal = (route) => {
-    setFormData({
-      id: route.id,
-      name: route.name,
-      description: route.description,
-      source_place_id: route.source_place_id,
-      destination_place_id: route.destination_place_id,
-      bus_type_id: route.bus_type_id,
-      distance: route.distance,
-      // status: route.status,
-      start_time: route.start_time,
-      end_time: route.end_time,
-      total_time: route.total_time,
-      delayed_time: route.delayed_time,
-      working_days: route.working_days,
-      meta_data: route.meta_data,
-    });
-    setShowEditModal(true);
-  };
-
-  const handlePaginationClick = (label) => {
-    if (label === '&laquo; Previous') {
-      setCurrentPage(currentPage - 1);
-    } else if (label === 'Next &raquo;') {
-      setCurrentPage(currentPage + 1);
-    } else {
-      setCurrentPage(parseInt(label)); // Assuming the label is numeric page number
-    }
-  };
-
-  const renderPaginationLabel = (label) => {
-    // Remove "&laquo;" and "&raquo;" from labels
-    return label.replace('&laquo;', '').replace('&raquo;', '');
-  };
-
-  const handleSearch = () => {
-    // Reset pagination to first page when searching
-    setCurrentPage(1);
-    fetchRoutes(1); // Fetch routes with the updated search criteria
-  };
-
-  const handleSrcDropdownChange = (id) => {
-    console.log(id);
-    setFormData({ ...formData, source_place_id: id });
-    // You can add additional logic here if needed
-  };
-
-  const handleDestDropdownChange = (id) => {
-    console.log(id);
-    setFormData({ ...formData, destination_place_id: id });
-    // You can add additional logic here if needed
-  };
+  const routeForm = (
+    <CForm>
+      <CRow className="g-3">
+        <CCol md={12}>
+          <CFormLabel>Route Name</CFormLabel>
+          <CFormInput name="name" value={formData.name} onChange={handleInputChange} />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Source</CFormLabel>
+          <DropdownSearch
+            onChange={(id) => setFormData((p) => ({ ...p, source_place_id: id }))}
+            endpoint="sites"
+            label="Source Place"
+            filter={[{ type: 'bus' }]}
+          />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Destination</CFormLabel>
+          <DropdownSearch
+            onChange={(id) => setFormData((p) => ({ ...p, destination_place_id: id }))}
+            endpoint="sites"
+            label="Destination Place"
+            filter={[{ type: 'bus' }]}
+          />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Bus Type ID</CFormLabel>
+          <CFormInput name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Distance (km)</CFormLabel>
+          <CFormInput name="distance" value={formData.distance} onChange={handleInputChange} />
+        </CCol>
+        <CCol md={4}>
+          <CFormLabel>Start Time</CFormLabel>
+          <CFormInput name="start_time" value={formData.start_time} onChange={handleInputChange} placeholder="HH:MM" />
+        </CCol>
+        <CCol md={4}>
+          <CFormLabel>End Time</CFormLabel>
+          <CFormInput name="end_time" value={formData.end_time} onChange={handleInputChange} placeholder="HH:MM" />
+        </CCol>
+        <CCol md={4}>
+          <CFormLabel>Total Time (min)</CFormLabel>
+          <CFormInput name="total_time" value={formData.total_time} onChange={handleInputChange} />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Delayed Time (min)</CFormLabel>
+          <CFormInput name="delayed_time" value={formData.delayed_time} onChange={handleInputChange} />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Working Days</CFormLabel>
+          <CFormInput name="working_days" value={formData.working_days} onChange={handleInputChange} placeholder="e.g. Mon,Tue,Wed" />
+        </CCol>
+        <CCol md={6}>
+          <CFormLabel>Status</CFormLabel>
+          <CFormSelect
+            value={formData.status ? '1' : '0'}
+            onChange={(e) => setFormData((p) => ({ ...p, status: e.target.value === '1' }))}
+          >
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </CFormSelect>
+        </CCol>
+        <CCol md={12}>
+          <CFormLabel>Description</CFormLabel>
+          <CFormInput name="description" value={formData.description} onChange={handleInputChange} />
+        </CCol>
+      </CRow>
+    </CForm>
+  );
 
   return (
     <CRow>
       <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <CCol xs={12}>
-              <CCard className="mb-4">
-                <CCardBody>
-                  <CForm className="row gx-3 gy-2 align-items-center" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
-                    <CCol sm={3}>
-                      <CFormInput id="specificSizeInputName" name="search" value={formData.search} onChange={handleInputChange} placeholder="Route name" />
-                    </CCol>
-                    <CCol sm={3}>
-                      <DropdownSearch
-                        onChange={handleSrcDropdownChange}
-                        endpoint="sites"
-                        label="Source Place"
-                        filter={[{ type: 'bus' }]}
-                      />
-                    </CCol>
-                    <CCol sm={3}>
-                      <DropdownSearch
-                        onChange={handleDestDropdownChange}
-                        endpoint="sites"
-                        label="Destination Place"
-                        filter={[{ type: 'bus' }]}
-                      />
-                    </CCol>
-                    <CCol xs="auto">
-                      <CButton color="primary" type="submit">
-                        Search
-                      </CButton>
-                    </CCol>
-                    <CCol xs="auto">
-                      <CButton color="primary" onClick={() => setShowAddModal(true)}>
-                        Add
-                      </CButton>
-                    </CCol>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
-            </CCol>
-          </CCardHeader>
+        {/* Search */}
+        <CCard className="mb-3">
           <CCardBody>
-            {loading ? (
-              <CSpinner color="primary" />
-            ) : (
-              <>
-                <CTable>
-                  <CTableHead>
-                    <CTableRow>
-                      <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Name</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Source Place</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Description</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Destination Place</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Bus Type</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Distance</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Start Time</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">End Time</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Total Time</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Delayed Time</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Working Days</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Status</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Actions</CTableHeaderCell>
-                    </CTableRow>
-                  </CTableHead>
-                  <CTableBody>
-                    {routes.map((route, index) => (
-                      <CTableRow key={route.id}>
-                        <CTableDataCell>{index + 1}</CTableDataCell>
-                        <CTableDataCell onClick={() => handleNameClick(route.name, route.route_stops)} style={{ cursor: 'pointer' }}>{route.name}</CTableDataCell>
-                        <CTableDataCell>{route.source_place.name}</CTableDataCell>
-                        <CTableDataCell>{route.destination_place.name}</CTableDataCell>
-                        <CTableDataCell>{route.bus_type.type}</CTableDataCell>
-                        <CTableDataCell>{route.description}</CTableDataCell>
-                        <CTableDataCell>{route.distance + ' KM'}</CTableDataCell>
-                        <CTableDataCell>{route.start_time}</CTableDataCell>
-                        <CTableDataCell>{route.end_time}</CTableDataCell>
-                        <CTableDataCell>{route.total_time}</CTableDataCell>
-                        <CTableDataCell>{route.delayed_time}</CTableDataCell>
-                        <CTableDataCell>{route.working_days}</CTableDataCell>
-                        <CTableDataCell>{!route.status ? 'Active' : 'Inactive'}</CTableDataCell>
-                        <CTableDataCell>
-                          <CButton color="warning" size="sm" onClick={() => openEditModal(route)}>Edit</CButton>{' '}
-                          <CButton color="danger" size="sm" onClick={() => handleDeleteRoute(route.id)}>Delete</CButton>
-                        </CTableDataCell>
-                      </CTableRow>
-                    ))}
-                  </CTableBody>
-                </CTable>
-                <CPagination>
-                  {links.map((link, index) => (
-                    <CPaginationItem
-                      key={index}
-                      active={link.active}
-                      onClick={() => handlePaginationClick(link.label)}
-                      disabled={!link.url} // Assuming link.url being null means it's disabled
-                    >
-                      {renderPaginationLabel(link.label)}
-                    </CPaginationItem>
-                  ))}
-                </CPagination>
-              </>
-            )}
+            <CForm className="row g-3 align-items-end" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+              <CCol md={3}>
+                <CFormLabel>Route Name</CFormLabel>
+                <CFormInput
+                  placeholder="Search..."
+                  value={searchFilters.search}
+                  onChange={(e) => setSearchFilters((p) => ({ ...p, search: e.target.value }))}
+                />
+              </CCol>
+              <CCol md={3}>
+                <CFormLabel>Source</CFormLabel>
+                <DropdownSearch
+                  onChange={(id) => setSearchFilters((p) => ({ ...p, source_place_id: id }))}
+                  endpoint="sites"
+                  label="Source Place"
+                  filter={[{ type: 'bus' }]}
+                />
+              </CCol>
+              <CCol md={3}>
+                <CFormLabel>Destination</CFormLabel>
+                <DropdownSearch
+                  onChange={(id) => setSearchFilters((p) => ({ ...p, destination_place_id: id }))}
+                  endpoint="sites"
+                  label="Destination Place"
+                  filter={[{ type: 'bus' }]}
+                />
+              </CCol>
+              <CCol md="auto">
+                <CButton color="primary" type="submit">Search</CButton>
+              </CCol>
+              <CCol md="auto">
+                <CButton color="success" onClick={openAddModal}>+ Add Route</CButton>
+              </CCol>
+            </CForm>
           </CCardBody>
         </CCard>
+
+        {/* Route Cards */}
+        {loading ? (
+          <div className="text-center py-5"><CSpinner color="primary" /></div>
+        ) : routes.length === 0 ? (
+          <CCard><CCardBody className="text-center text-body-secondary py-5">No routes found.</CCardBody></CCard>
+        ) : (
+          routes.map((route) => (
+            <CCard key={route.id} className="mb-3">
+              <CCardBody>
+                <CRow className="g-3">
+                  {/* Route header */}
+                  <CCol xs={12}>
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                      <strong style={{ fontSize: 16 }}>{route.name}</strong>
+                      <CBadge color={route.status ? 'success' : 'secondary'} shape="rounded-pill">
+                        {route.status ? 'Active' : 'Inactive'}
+                      </CBadge>
+                      {route.bus_type?.type && (
+                        <CBadge color="info" shape="rounded-pill">
+                          <CIcon icon={cilBus} size="sm" className="me-1" />{route.bus_type.type}
+                        </CBadge>
+                      )}
+                    </div>
+                  </CCol>
+
+                  {/* Source → Destination */}
+                  <CCol xs={12} md={4}>
+                    <div className="d-flex align-items-center gap-2" style={{ fontSize: 14 }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--cui-secondary-color)', textTransform: 'uppercase' }}>From</div>
+                        <div className="d-flex align-items-center gap-1">
+                          <CIcon icon={cilLocationPin} size="sm" style={{ color: 'var(--cui-success)' }} />
+                          <strong>{route.source_place?.name}</strong>
+                        </div>
+                      </div>
+                      <CIcon icon={cilArrowRight} size="lg" style={{ color: 'var(--cui-secondary-color)', margin: '0 8px' }} />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--cui-secondary-color)', textTransform: 'uppercase' }}>To</div>
+                        <div className="d-flex align-items-center gap-1">
+                          <CIcon icon={cilLocationPin} size="sm" style={{ color: 'var(--cui-danger)' }} />
+                          <strong>{route.destination_place?.name}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </CCol>
+
+                  {/* Timings */}
+                  <CCol xs={12} md={5}>
+                    <div className="d-flex flex-wrap gap-3" style={{ fontSize: 13, color: 'var(--cui-secondary-color)' }}>
+                      {route.start_time && (
+                        <span><CIcon icon={cilClock} size="sm" className="me-1" />{route.start_time} – {route.end_time}</span>
+                      )}
+                      {route.total_time && (
+                        <span><CIcon icon={cilSpeedometer} size="sm" className="me-1" />{route.total_time} min</span>
+                      )}
+                      {route.distance && (
+                        <span>{route.distance} km</span>
+                      )}
+                      {route.delayed_time && (
+                        <span style={{ color: 'var(--cui-warning)' }}>Delay: {route.delayed_time} min</span>
+                      )}
+                      {route.working_days && (
+                        <span>Days: {route.working_days}</span>
+                      )}
+                    </div>
+                    {route.description && (
+                      <p className="mb-0 mt-1 text-body-secondary" style={{ fontSize: 13 }}>{route.description}</p>
+                    )}
+                  </CCol>
+
+                  {/* Actions */}
+                  <CCol xs={12} md={3} className="d-flex justify-content-end align-items-start gap-2 flex-wrap">
+                    {route.route_stops && route.route_stops.length > 0 && (
+                      <CButton color="primary" size="sm" onClick={() => openStopsModal(route)}>
+                        Stops ({route.route_stops.length})
+                      </CButton>
+                    )}
+                    <CButton color="warning" size="sm" onClick={() => openEditModal(route)}>
+                      <CIcon icon={cilPencil} className="me-1" />Edit
+                    </CButton>
+                    <CButton color="danger" size="sm" onClick={() => handleDeleteRoute(route.id)}>
+                      <CIcon icon={cilTrash} className="me-1" />Delete
+                    </CButton>
+                  </CCol>
+                </CRow>
+              </CCardBody>
+            </CCard>
+          ))
+        )}
+
+        {/* Pagination */}
+        {links.length > 0 && (
+          <CPagination className="mt-2">
+            {links.map((link, index) => (
+              <CPaginationItem
+                key={index}
+                active={link.active}
+                disabled={!link.url}
+                onClick={() => link.url && handlePaginationClick(link.label)}
+              >
+                {renderPaginationLabel(link.label)}
+              </CPaginationItem>
+            ))}
+          </CPagination>
+        )}
       </CCol>
-      <CModal visible={visible} onClose={() => setVisible(false)} fullscreen >
-        <CModalHeader onClose={() => setVisible(false)}>
-          <CModalTitle>{selectedName}</CModalTitle>
+
+      {/* Stops Modal */}
+      <CModal visible={showStopsModal} onClose={() => setShowStopsModal(false)} fullscreen>
+        <CModalHeader onClose={() => setShowStopsModal(false)}>
+          <CModalTitle>Route Stops — {selectedRoute?.name}</CModalTitle>
         </CModalHeader>
         <CModalBody>
           <CTable striped bordered hover responsive>
@@ -386,23 +488,22 @@ const Routes = () => {
                 <CTableHeaderCell>Route No</CTableHeaderCell>
                 <CTableHeaderCell>Stop Name</CTableHeaderCell>
                 <CTableHeaderCell>Depart At</CTableHeaderCell>
-                <CTableHeaderCell>Arrived At</CTableHeaderCell>
-                <CTableHeaderCell>Delayed Time (min)</CTableHeaderCell>
+                <CTableHeaderCell>Arrive At</CTableHeaderCell>
+                <CTableHeaderCell>Delay (min)</CTableHeaderCell>
                 <CTableHeaderCell>Distance (km)</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {selectedRouteStops.map((stop, index) => (
+              {(selectedRoute?.route_stops || []).map((stop, index) => (
                 <CTableRow key={index}>
                   <CTableDataCell>{index + 1}</CTableDataCell>
                   <CTableDataCell>{stop.serial_no}</CTableDataCell>
                   <CTableDataCell>{stop.route_id}</CTableDataCell>
-                  <CTableDataCell>{stop.site.name}</CTableDataCell>
+                  <CTableDataCell>{stop.site?.name}</CTableDataCell>
                   <CTableDataCell>{stop.dept_time}</CTableDataCell>
                   <CTableDataCell>{stop.arr_time}</CTableDataCell>
                   <CTableDataCell>{stop.delayed_time}</CTableDataCell>
                   <CTableDataCell>{stop.distance}</CTableDataCell>
-                  {/* <CTableDataCell><CBadge color="primary" shape="rounded-pill">14</CBadge></CTableDataCell> */}
                 </CTableRow>
               ))}
             </CTableBody>
@@ -410,114 +511,31 @@ const Routes = () => {
         </CModalBody>
       </CModal>
 
-      <CModal visible={showAddModal} onClose={() => setShowAddModal(false)}>
-        <CModalHeader onClose={() => setShowAddModal(false)}>
-          <CModalTitle>Add Category</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm>
-            <CFormLabel htmlFor="name">Name</CFormLabel>
-            <CFormInput id="name" name="name" value={formData.name} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="description">Description</CFormLabel>
-            <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="Source">Source</CFormLabel>
-            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="sites" label="Source Place" filter={[{ type: 'bus' }]} />
-
-            <CFormLabel htmlFor="destination">Destination</CFormLabel>
-            <DropdownSearch onChange={handleDestDropdownChange} endpoint="sites" label="Destination Place" filter={[{ type: 'bus' }]} />
-
-            <CFormLabel htmlFor="bus_type_id">Bus Type</CFormLabel>
-            <CFormInput id="bus_type_id" name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="distance">Distance</CFormLabel>
-            <CFormInput id="distance" name="distance" value={formData.distance} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="status">Status</CFormLabel>
-            <CFormSelect id="status" name="status" value={formData.status} onChange={handleInputChange}>
-              <option value={true}>Active</option>
-              <option value={false}>Inactive</option>
-            </CFormSelect>
-
-            <CFormLabel htmlFor="start_time">start_time</CFormLabel>
-            <CFormInput id="start_time" name="start_time" value={formData.start_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="end_time">end_time</CFormLabel>
-            <CFormInput id="end_time" name="end_time" value={formData.end_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="total_time">total_time</CFormLabel>
-            <CFormInput id="total_time" name="total_time" value={formData.total_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="delayed_time">delayed_time</CFormLabel>
-            <CFormInput id="delayed_time" name="delayed_time" value={formData.delayed_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="working_days">working_days</CFormLabel>
-            <CFormInput id="working_days" name="working_days" value={formData.working_days} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="meta_data">Meta Data</CFormLabel>
-            <CFormInput id="meta_data" name="meta_data" value={formData.meta_data} onChange={handleInputChange} />
-          </CForm>
-        </CModalBody>
+      {/* Add Modal */}
+      <CModal visible={showAddModal} onClose={() => setShowAddModal(false)} size="lg" scrollable>
+        <CModalHeader><CModalTitle>Add Route</CModalTitle></CModalHeader>
+        <CModalBody>{routeForm}</CModalBody>
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowAddModal(false)}>Close</CButton>
-          <CButton color="primary" onClick={handleAddRoute}>Add</CButton>
+          <CButton color="secondary" onClick={() => setShowAddModal(false)}>Cancel</CButton>
+          <CButton color="primary" onClick={handleAddRoute} disabled={loading}>
+            {loading ? <CSpinner size="sm" /> : 'Add Route'}
+          </CButton>
         </CModalFooter>
       </CModal>
-      <CModal visible={showEditModal} onClose={() => setShowEditModal(false)}>
-        <CModalHeader onClose={() => setShowEditModal(false)}>
-          <CModalTitle>Edit Routes</CModalTitle>
-        </CModalHeader>
-        <CModalBody>
-          <CForm>
-            <CFormLabel htmlFor="name">Name</CFormLabel>
-            <CFormInput id="name" name="name" value={formData.name} onChange={handleInputChange} />
 
-            <CFormLabel htmlFor="description">Description</CFormLabel>
-            <CFormInput id="description" name="description" value={formData.description} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="Source">Source</CFormLabel>
-            <DropdownSearch onChange={handleSrcDropdownChange} endpoint="sites" label="Source Place" filter={[{ type: 'bus' }]} />
-
-            <CFormLabel htmlFor="destination">Destination</CFormLabel>
-            <DropdownSearch onChange={handleDestDropdownChange} endpoint="sites" label="Destination Place" filter={[{ type: 'bus' }]} />
-
-            <CFormLabel htmlFor="bus_type_id">Bus Type</CFormLabel>
-            <CFormInput id="bus_type_id" name="bus_type_id" value={formData.bus_type_id} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="distance">Distance</CFormLabel>
-            <CFormInput id="distance" name="distance" value={formData.distance} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="status">Status</CFormLabel>
-            <CFormSelect id="status" name="status" value={formData.status} onChange={handleInputChange}>
-              <option value={true}>Active</option>
-              <option value={false}>Inactive</option>
-            </CFormSelect>
-
-            <CFormLabel htmlFor="start_time">start_time</CFormLabel>
-            <CFormInput id="start_time" name="start_time" value={formData.start_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="end_time">end_time</CFormLabel>
-            <CFormInput id="end_time" name="end_time" value={formData.end_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="total_time">total_time</CFormLabel>
-            <CFormInput id="total_time" name="total_time" value={formData.total_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="delayed_time">delayed_time</CFormLabel>
-            <CFormInput id="delayed_time" name="delayed_time" value={formData.delayed_time} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="working_days">working_days</CFormLabel>
-            <CFormInput id="working_days" name="working_days" value={formData.working_days} onChange={handleInputChange} />
-
-            <CFormLabel htmlFor="meta_data">Meta Data</CFormLabel>
-            <CFormInput id="meta_data" name="meta_data" value={formData.meta_data} onChange={handleInputChange} />
-          </CForm>
-        </CModalBody>
+      {/* Edit Modal */}
+      <CModal visible={showEditModal} onClose={() => setShowEditModal(false)} size="lg" scrollable>
+        <CModalHeader><CModalTitle>Edit — {formData.name}</CModalTitle></CModalHeader>
+        <CModalBody>{routeForm}</CModalBody>
         <CModalFooter>
-          <CButton color="secondary" onClick={() => setShowEditModal(false)}>Close</CButton>
-          <CButton color="primary" onClick={handleEditRoute}>Save Changes</CButton>
+          <CButton color="secondary" onClick={() => setShowEditModal(false)}>Cancel</CButton>
+          <CButton color="primary" onClick={handleEditRoute} disabled={loading}>
+            {loading ? <CSpinner size="sm" /> : 'Save Changes'}
+          </CButton>
         </CModalFooter>
       </CModal>
+      <AlertModal alert={alert} onClose={clearAlert} />
+
     </CRow>
   );
 };

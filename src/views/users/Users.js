@@ -1,204 +1,191 @@
 import React, { useEffect, useState } from 'react';
 import {
+  CAlert,
+  CBadge,
+  CButton,
   CCard,
   CCardBody,
-  CCardHeader,
   CCol,
-  CRow,
-  CTable,
-  CTableBody,
-  CTableDataCell,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
+  CForm,
+  CFormInput,
+  CFormLabel,
+  CImage,
   CPagination,
   CPaginationItem,
-  CForm,
-  CFormLabel,
-  CFormInput,
-  CFormSelect,
-  CButton,
-  CImage,
+  CRow,
   CSpinner,
-  CModal,
-  CModalHeader,
-  CModalTitle,
-  CModalBody,
-  CModalFooter,
-  CAlert,
-  CFormSwitch
 } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilUser, cilEnvelopeClosed, cilPhone, cilLockLocked, cilBadge } from '@coreui/icons';
 import apiService from 'src/services/apiService';
 import DropdownSearch from '../../components/DropdownSearch';
 import { FTP_BASE_URL } from 'src/services/endpoints';
 
 const Users = () => {
-  const [queries, setQueries] = useState([]);
+  const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    id: '',
-    status: false,
-  });
   const [error, setError] = useState(null);
-  const [isChecked, setIsChecked] = useState();
 
   useEffect(() => {
-    fetchQueries(currentPage);
+    fetchUsers(currentPage);
   }, [currentPage]);
 
-  const fetchQueries = async (page) => {
+  const showAlert = (msg) => setError(msg);
+  const clearAlert = () => setError(null);
+
+  const fetchUsers = async (page) => {
     setLoading(true);
     try {
       const data = await apiService('POST', `allUsers?page=${page}`, {});
-      setQueries(data.data.data || []);
+      setUsers(data.data.data || []);
       setTotalPages(data.data.last_page || 1);
-    } catch (error) {
-      console.error('Error fetching queries:', error);
-      showAlert(error.message);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      showAlert(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSwitchChange = async (id, status) => {
-    const formData = new FormData();
-    formData.append('id', id);
-    formData.append('status', status);
-    setIsChecked(!isChecked);
-
-    setLoading(true);
-    try {
-      await apiService('POST', 'updateQuery', formData);
-      fetchQueries(currentPage);
-    } catch (error) {
-      console.error('Error updating category:', error);
-      showAlert(error.message);
-    } finally {
-      setLoading(false);
-    }
+  const genderColor = (g) => {
+    if (!g) return 'secondary';
+    if (g.toLowerCase() === 'male') return 'info';
+    if (g.toLowerCase() === 'female') return 'danger';
+    return 'secondary';
   };
 
-  const handleDestDropdownChange = (id) => {
-    console.log(id);
-    // setFormData({ ...formData, destination_place_id: id });
-    // You can add additional logic here if needed
-  };
   return (
     <CRow>
       <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <CCol xs={12}>
-              <CCard className="mb-4">
-                <CCardBody>
-                  <CForm className="row gx-3 gy-2 align-items-center">
-                    <CCol sm={3}>
-                      <CFormLabel className="visually-hidden" htmlFor="specificSizeInputName">
-                        Name
-                      </CFormLabel>
-                      <CFormInput id="specificSizeInputName" placeholder="Jane Doe" />
-                    </CCol>
-                    <CCol sm={3}>
-                      <DropdownSearch
-                        onChange={handleDestDropdownChange}
-                        endpoint="roleDD"
-                        label="Roles"
-                      />
-                    </CCol>
-                    <CCol xs="auto">
-                      <CButton color="primary" type="submit">
-                        Search
-                      </CButton>
-                    </CCol>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
-            </CCol>
-          </CCardHeader>
+        {/* Search Bar */}
+        <CCard className="mb-3">
           <CCardBody>
-            {loading ? (
-              <CSpinner color="primary" />
-            ) : (
-              <>
-                <CTable>
-                  <CTableHead>
-                    <CTableRow>
-                      <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Name</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Role</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Email</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Email Status</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Mobile</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Language</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Is Verified</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Refferal Code</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">OTP</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Gender</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">DOB</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Profile Picture</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Created At</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Updated At</CTableHeaderCell>
-                      <CTableHeaderCell scope="col">Actions</CTableHeaderCell>
-                    </CTableRow>
-                  </CTableHead>
-                  <CTableBody>
-                    {queries.map((queries, index) => (
-                      <CTableRow key={queries.id}>
-                        <CTableDataCell>{index + 1}</CTableDataCell>
-                        <CTableDataCell>{queries.name}</CTableDataCell>
-                        <CTableDataCell>{queries.roles.name}</CTableDataCell>
-                        <CTableDataCell>{queries.email}</CTableDataCell>
-                        <CTableDataCell>{queries.email_verified_at}</CTableDataCell>
-                        <CTableDataCell>{queries.mobile}</CTableDataCell>
-                        <CTableDataCell>{queries.language}</CTableDataCell>
-                        <CTableDataCell>{queries.isVerified}</CTableDataCell>
-                        <CTableDataCell>{queries.uid}</CTableDataCell>
-                        <CTableDataCell>{queries.otp}</CTableDataCell>
-                        <CTableDataCell>{queries.gender}</CTableDataCell>
-                        <CTableDataCell>{queries.dob}</CTableDataCell>
-                        <CTableDataCell>
-                          {queries.profile_picture ? <CImage src={FTP_BASE_URL + queries.profile_picture} alt={queries.name} width="50" /> : 'No Image'}
-                        </CTableDataCell>
-                        <CTableDataCell>{queries.created_at}</CTableDataCell>
-                        <CTableDataCell>{queries.updated_at}</CTableDataCell>
-                        <CTableDataCell>
-                          <CButton color="warning" size="sm" onClick={() => openEditModal(category)}>Edit</CButton>{' '}
-                          <CButton color="danger" size="sm" onClick={() => handleDeleteCategory(category.id)}>Delete</CButton>
-                        </CTableDataCell>
-                        {/* <CTableDataCell>
-                          <CFormSwitch
-                            id={`formSwitchCheckChecked-${queries.id}`}
-                            defaultChecked
-                            disabled={queries.status === 'read'}
-                            onChange={() => handleSwitchChange(queries.id, queries.status == 'read' ? 'unread' : 'read')}
-                          />
-                        </CTableDataCell> */}
-                      </CTableRow>
-                    ))}
-                  </CTableBody>
-                </CTable>
-                <CPagination>
-                  <CPaginationItem disabled={currentPage <= 1} onClick={() => setCurrentPage(currentPage - 1)}>
-                    Previous
-                  </CPaginationItem>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <CPaginationItem key={i} active={i + 1 === currentPage} onClick={() => setCurrentPage(i + 1)}>
-                      {i + 1}
-                    </CPaginationItem>
-                  ))}
-                  <CPaginationItem disabled={currentPage >= totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
-                    Next
-                  </CPaginationItem>
-                </CPagination>
-              </>
-            )}
+            <CForm className="row g-3 align-items-end">
+              <CCol md={4}>
+                <CFormLabel>Name</CFormLabel>
+                <CFormInput placeholder="Search by name..." />
+              </CCol>
+              <CCol md={4}>
+                <CFormLabel>Role</CFormLabel>
+                <DropdownSearch
+                  onChange={() => {}}
+                  endpoint="roleDD"
+                  label="Roles"
+                  filter={[{}]}
+                />
+              </CCol>
+              <CCol md="auto">
+                <CButton color="primary">Search</CButton>
+              </CCol>
+            </CForm>
           </CCardBody>
         </CCard>
+
+        {error && (
+          <CAlert color="danger" onClose={clearAlert} dismissible className="mb-3">{error}</CAlert>
+        )}
+
+        {/* Cards */}
+        {loading ? (
+          <div className="text-center py-5"><CSpinner color="primary" /></div>
+        ) : users.length === 0 ? (
+          <CCard><CCardBody className="text-center text-body-secondary py-5">No users found.</CCardBody></CCard>
+        ) : (
+          users.map((user) => (
+            <CCard key={user.id} className="mb-3">
+              <CCardBody>
+                <CRow className="align-items-center g-3">
+                  {/* Avatar */}
+                  <CCol xs={12} md={1} className="text-center">
+                    {user.profile_picture ? (
+                      <CImage
+                        src={FTP_BASE_URL + user.profile_picture}
+                        alt={user.name}
+                        style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 60, height: 60, borderRadius: '50%',
+                        backgroundColor: 'var(--cui-secondary-bg)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <CIcon icon={cilUser} size="xl" style={{ color: 'var(--cui-secondary-color)' }} />
+                      </div>
+                    )}
+                  </CCol>
+
+                  {/* Main Info */}
+                  <CCol xs={12} md={5}>
+                    <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                      <strong style={{ fontSize: 15 }}>{user.name}</strong>
+                      {user.roles?.name && (
+                        <CBadge color="primary" shape="rounded-pill">{user.roles.name}</CBadge>
+                      )}
+                      {user.gender && (
+                        <CBadge color={genderColor(user.gender)} shape="rounded-pill">{user.gender}</CBadge>
+                      )}
+                      {user.isVerified == 1 && (
+                        <CBadge color="success" shape="rounded-pill">
+                          <CIcon icon={cilBadge} className="me-1" size="sm" />Verified
+                        </CBadge>
+                      )}
+                    </div>
+                    <div className="d-flex flex-wrap gap-3" style={{ fontSize: 13, color: 'var(--cui-secondary-color)' }}>
+                      {user.email && (
+                        <span><CIcon icon={cilEnvelopeClosed} size="sm" className="me-1" />{user.email}</span>
+                      )}
+                      {user.mobile && (
+                        <span><CIcon icon={cilPhone} size="sm" className="me-1" />{user.mobile}</span>
+                      )}
+                    </div>
+                  </CCol>
+
+                  {/* Secondary Info */}
+                  <CCol xs={12} md={4}>
+                    <div className="d-flex flex-wrap gap-3" style={{ fontSize: 13, color: 'var(--cui-secondary-color)' }}>
+                      {user.language && <span>Language: {user.language}</span>}
+                      {user.dob && <span>DOB: {user.dob}</span>}
+                      {user.uid && (
+                        <span>
+                          <CIcon icon={cilLockLocked} size="sm" className="me-1" />
+                          Ref: {user.uid}
+                        </span>
+                      )}
+                    </div>
+                    {user.email_verified_at && (
+                      <div style={{ fontSize: 12, color: 'var(--cui-secondary-color)', marginTop: 4 }}>
+                        Email verified: {user.email_verified_at}
+                      </div>
+                    )}
+                  </CCol>
+
+                  {/* OTP + Timestamps */}
+                  <CCol xs={12} md={2} className="text-end">
+                    {user.otp && (
+                      <div style={{ fontSize: 12, color: 'var(--cui-secondary-color)' }}>OTP: {user.otp}</div>
+                    )}
+                    <div style={{ fontSize: 11, color: 'var(--cui-secondary-color)', marginTop: 4 }}>
+                      {user.created_at?.slice(0, 10)}
+                    </div>
+                  </CCol>
+                </CRow>
+              </CCardBody>
+            </CCard>
+          ))
+        )}
+
+        {/* Pagination */}
+        <CPagination className="mt-2">
+          <CPaginationItem disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)}>Previous</CPaginationItem>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <CPaginationItem key={i} active={i + 1 === currentPage} onClick={() => setCurrentPage(i + 1)}>{i + 1}</CPaginationItem>
+          ))}
+          <CPaginationItem disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)}>Next</CPaginationItem>
+        </CPagination>
       </CCol>
-    </CRow >
+    </CRow>
   );
 };
 

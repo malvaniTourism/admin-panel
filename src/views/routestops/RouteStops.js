@@ -1,57 +1,56 @@
 import React, { useState } from 'react';
 import {
+
+  CBadge,
+  CButton,
   CCard,
   CCardBody,
   CCardHeader,
   CCol,
+  CForm,
+  CFormInput,
+  CFormLabel,
   CRow,
+  CSpinner,
   CTable,
   CTableBody,
   CTableDataCell,
   CTableHead,
   CTableHeaderCell,
   CTableRow,
-  CButton,
-  CForm,
-  CFormInput,
-  CAlert,
-  CSpinner
 } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilClock, cilLocationPin, cilSpeedometer, cilTrash } from '@coreui/icons';
 import apiService from 'src/services/apiService';
+import AlertModal from 'src/components/AlertModal';
 import DropdownSearch from '../../components/DropdownSearch';
+import { parseApiMessage } from 'src/utils/apiMessages';
 
 const RouteStops = () => {
   const [routeStops, setRouteStops] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [formData, setFormData] = useState({
-    search: '',
-    source_place_id: '',
-  });
+  const [alert, setAlert] = useState(null);
+  const [searchFilters, setSearchFilters] = useState({ search: '', id: '' });
   const [editableCell, setEditableCell] = useState({ rowIndex: null, colIndex: null });
-  const [updatedData, setUpdatedData] = useState([]); // To track changes in route stops
+  const [updatedData, setUpdatedData] = useState([]);
 
-  const showAlert = (errorMessage) => {
-    setError(errorMessage);
-  };
-
-  const clearAlert = () => {
-    setError(null);
-  };
+  const showError = (msg) => setAlert({ type: 'danger', message: msg });
+  const showSuccess = (msg) => setAlert({ type: 'success', message: msg });
+  const clearAlert = () => setAlert(null);
 
   const fetchRouteStops = async (payload) => {
     setLoading(true);
     try {
-      const data = await apiService('POST', `routeDetails`, payload);
-      console.log("resp", data);
+      const data = await apiService('POST', 'routeDetails', payload);
       if (!data.success) {
-        showAlert(data.message.destination_place_id);
+        showError(parseApiMessage(data.message));
         return;
       }
       setRouteStops(data.data || []);
-    } catch (error) {
-      console.error('Error fetching routes:', error);
-      showAlert(error.message);
+      setUpdatedData([]);
+    } catch (err) {
+      console.error('Error fetching route stops:', err);
+      showError(err.message);
     } finally {
       setLoading(false);
     }
@@ -59,215 +58,221 @@ const RouteStops = () => {
 
   const handleSearch = () => {
     const payload = new FormData();
-    if (formData.search) payload.append('search', formData.search);
-    if (formData.id) payload.append('id', formData.id);
-
+    if (searchFilters.search) payload.append('search', searchFilters.search);
+    if (searchFilters.id) payload.append('id', searchFilters.id);
     fetchRouteStops(payload);
   };
 
-  const handleInputChange = (e, rowIndex, colIndex) => {
+  const handleCellChange = (e, rowIndex, field) => {
     const value = e.target.value;
     const updatedRows = [...routeStops.route_stops];
+    updatedRows[rowIndex] = { ...updatedRows[rowIndex], [field]: value };
 
-    updatedRows[rowIndex][colIndex] = value;
-
-    const sanitizedUpdatedRows = updatedRows.map((row) => {
-      const { site, ...rest } = row;
-      return rest; 
-    });
-
-    setRouteStops((prevState) => ({ ...prevState, route_stops: updatedRows }));
-
-    setUpdatedData(sanitizedUpdatedRows); // Keep track of the changes excluding the "site" key
+    const sanitized = updatedRows.map(({ site, ...rest }) => rest);
+    setRouteStops((prev) => ({ ...prev, route_stops: updatedRows }));
+    setUpdatedData(sanitized);
   };
 
-
   const handleCellClick = (rowIndex, colIndex) => {
-    setEditableCell({ rowIndex, colIndex }); // Set the cell that is being edited
+    setEditableCell({ rowIndex, colIndex });
   };
 
   const handleKeyDown = (e, rowIndex, colIndex) => {
-    // Handle tab key press to move to next column or row
     if (e.key === 'Tab') {
-      e.preventDefault(); // Prevent default tab behavior (focus moving outside the table)
-
-      const lastColumnIndex = 6; // Index of last column you want (Arrive At)
-      const nextColIndex = colIndex + 1;
-      const nextRowIndex = rowIndex + 1;
-
-      // If we are at the last column of the current row
-      if (nextColIndex > lastColumnIndex) {
-        if (nextRowIndex < routeStops.route_stops.length) {
-          // Move to the first editable cell (Depart At) of the next row
-          setEditableCell({ rowIndex: nextRowIndex, colIndex: 4 });
+      e.preventDefault();
+      const lastCol = 5;
+      if (colIndex >= lastCol) {
+        const nextRow = rowIndex + 1;
+        if (nextRow < routeStops.route_stops.length) {
+          setEditableCell({ rowIndex: nextRow, colIndex: 4 });
         }
       } else {
-        // Otherwise, move to the next column in the same row
-        setEditableCell({ rowIndex, colIndex: nextColIndex });
+        setEditableCell({ rowIndex, colIndex: colIndex + 1 });
       }
     }
   };
 
   const handleSubmit = async () => {
-    // Send updated data to the API
-    const payload = {};  // Initialize the payload object
-    payload['route_stops'] = updatedData;
     try {
-      const response = await apiService('POST', `massRouteStopsUpdate`, payload);
+      const response = await apiService('POST', 'massRouteStopsUpdate', { route_stops: updatedData });
       if (response.success) {
         setEditableCell({ rowIndex: null, colIndex: null });
-
-        showAlert('Data updated successfully!');
+        showSuccess(response.message);
       } else {
-        showAlert(response.message || 'Something went wrong');
+        showError(parseApiMessage(response.message));
       }
-    } catch (error) {
-      console.error('Error updating data:', error);
-      showAlert(error.message);
+    } catch (err) {
+      console.error('Error saving route stops:', err);
+      showError(err.message);
     }
   };
 
   const handleDeleteRouteStop = async (id) => {
-    const form = new FormData();
-    Object.keys(formData).forEach((key) => {
-      console.log(key, formData[key]);
-    });
-    if (formData.id) form.append('id', formData.id)
+    if (!window.confirm('Delete this stop?')) return;
     setLoading(true);
     try {
       const data = await apiService('POST', 'deleteRouteStop', { id });
       if (!data.success) {
-        const errorMessages = Object.values(data.message).flat().join(', ');
-        showAlert(errorMessages);
+        showError(parseApiMessage(data.message));
         return;
       }
-
-      setFormData(formData);
-      fetchRouteStops(formData);
-    } catch (error) {
-      console.error('Error deleting site:', error);
-      showAlert(error.message);
+      showSuccess(data.message);
+      handleSearch();
+    } catch (err) {
+      console.error('Error deleting route stop:', err);
+      showError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSrcDropdownChange = (id) => {
-    setFormData({ ...formData, id: id });
-  };
+  const stops = routeStops?.route_stops || [];
+
+  const editableInput = (value, rowIndex, colIndex, field) => (
+    editableCell.rowIndex === rowIndex && editableCell.colIndex === colIndex ? (
+      <CFormInput
+        value={value || ''}
+        onChange={(e) => handleCellChange(e, rowIndex, field)}
+        onKeyDown={(e) => handleKeyDown(e, rowIndex, colIndex)}
+        size="sm"
+        autoFocus
+      />
+    ) : (
+      <span
+        onClick={() => handleCellClick(rowIndex, colIndex)}
+        style={{ cursor: 'pointer', display: 'block', minWidth: 60, padding: '2px 4px', borderRadius: 4 }}
+        className="editable-cell"
+        title="Click to edit"
+      >
+        {value || <span style={{ color: 'var(--cui-secondary-color)', fontSize: 11 }}>—</span>}
+      </span>
+    )
+  );
 
   return (
     <CRow>
       <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <CCol xs={12}>
-              <CCard className="mb-4">
-                <CCardBody>
-                  <CForm className="row gx-3 gy-2 align-items-center" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
-                    <CCol sm={3}>
-                      <CFormInput
-                        id="specificSizeInputName"
-                        name="search"
-                        value={formData.search}
-                        onChange={handleInputChange}
-                        placeholder="Route name"
-                      />
-                    </CCol>
-                    <CCol sm={3}>
-                      <DropdownSearch
-                        onChange={handleSrcDropdownChange}
-                        endpoint="routes"
-                        label="Routes"
-                        filter={[{ with_stops: 0 }]}
-                      />
-                    </CCol>
-                    <CCol xs="auto">
-                      <CButton color="primary" type="submit">
-                        Search
-                      </CButton>
-                    </CCol>
-                    <CCol xs="auto">
-                      <CButton color="primary" onClick={() => setShowAddModal(true)}>
-                        Add
-                      </CButton>
-                    </CCol>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-              {error && <CAlert color="danger" onClose={clearAlert} dismissible>{error}</CAlert>}
-            </CCol>
+        {/* Search */}
+        <CCard className="mb-3">
+          <CCardBody>
+            <CForm className="row g-3 align-items-end" onSubmit={(e) => { e.preventDefault(); handleSearch(); }}>
+              <CCol md={4}>
+                <CFormLabel>Route Name</CFormLabel>
+                <CFormInput
+                  placeholder="Search by route name..."
+                  value={searchFilters.search}
+                  onChange={(e) => setSearchFilters((p) => ({ ...p, search: e.target.value }))}
+                />
+              </CCol>
+              <CCol md={4}>
+                <CFormLabel>Route</CFormLabel>
+                <DropdownSearch
+                  onChange={(id) => setSearchFilters((p) => ({ ...p, id: id ?? '' }))}
+                  endpoint="routes"
+                  label="Select Route"
+                  filter={[{ with_stops: 0 }]}
+                />
+              </CCol>
+              <CCol md="auto">
+                <CButton color="primary" type="submit">Search</CButton>
+              </CCol>
+            </CForm>
+          </CCardBody>
+        </CCard>
+
+        {/* Route Info Header */}
+        {routeStops?.name && (
+          <CCard className="mb-3">
+            <CCardBody>
+              <div className="d-flex align-items-center gap-3 flex-wrap">
+                <strong style={{ fontSize: 16 }}>{routeStops.name}</strong>
+                {routeStops.source_place && (
+                  <div className="d-flex align-items-center gap-1" style={{ fontSize: 13 }}>
+                    <CIcon icon={cilLocationPin} size="sm" style={{ color: 'var(--cui-success)' }} />
+                    {routeStops.source_place.name}
+                    <span className="mx-2">→</span>
+                    <CIcon icon={cilLocationPin} size="sm" style={{ color: 'var(--cui-danger)' }} />
+                    {routeStops.destination_place?.name}
+                  </div>
+                )}
+                {routeStops.distance && (
+                  <CBadge color="info" shape="rounded-pill">
+                    <CIcon icon={cilSpeedometer} size="sm" className="me-1" />{routeStops.distance} km
+                  </CBadge>
+                )}
+                {routeStops.start_time && (
+                  <CBadge color="secondary" shape="rounded-pill">
+                    <CIcon icon={cilClock} size="sm" className="me-1" />
+                    {routeStops.start_time} – {routeStops.end_time}
+                  </CBadge>
+                )}
+              </div>
+            </CCardBody>
+          </CCard>
+        )}
+
+        {/* Stops Table */}
+        <CCard>
+          <CCardHeader className="d-flex justify-content-between align-items-center">
+            <strong>Route Stops</strong>
+            {stops.length > 0 && (
+              <CButton color="primary" size="sm" onClick={handleSubmit}>
+                Save Changes
+              </CButton>
+            )}
           </CCardHeader>
           <CCardBody>
             {loading ? (
-              <CSpinner color="primary" />
+              <div className="text-center py-5"><CSpinner color="primary" /></div>
+            ) : stops.length === 0 ? (
+              <p className="text-center text-body-secondary py-4">
+                {routeStops?.route_stops === undefined
+                  ? 'Search for a route to view its stops.'
+                  : 'No stops found for this route.'}
+              </p>
             ) : (
               <CTable striped bordered hover responsive>
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell>#</CTableHeaderCell>
-                    <CTableHeaderCell>Serial No</CTableHeaderCell>
-                    <CTableHeaderCell>Route No</CTableHeaderCell>
+                    <CTableHeaderCell>Seq</CTableHeaderCell>
                     <CTableHeaderCell>Stop Name</CTableHeaderCell>
                     <CTableHeaderCell>Depart At</CTableHeaderCell>
-                    <CTableHeaderCell>Arrived At</CTableHeaderCell>
-                    <CTableHeaderCell>Delayed Time (min)</CTableHeaderCell>
+                    <CTableHeaderCell>Arrive At</CTableHeaderCell>
+                    <CTableHeaderCell>Delay (min)</CTableHeaderCell>
                     <CTableHeaderCell>Distance (km)</CTableHeaderCell>
-                    <CTableHeaderCell>Actions</CTableHeaderCell>
+                    <CTableHeaderCell></CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {routeStops?.route_stops?.map((stop, rowIndex) => (
+                  {stops.map((stop, rowIndex) => (
                     <CTableRow key={rowIndex}>
                       <CTableDataCell>{rowIndex + 1}</CTableDataCell>
-                      <CTableDataCell>{stop.serial_no || ""}</CTableDataCell>
-                      <CTableDataCell>{stop.route_id || ""}</CTableDataCell>
-                      <CTableDataCell>{stop.site?.name || ""}</CTableDataCell>
-                      <CTableDataCell
-                        onClick={() => handleCellClick(rowIndex, 4)}
-                        onKeyDown={(e) => handleKeyDown(e, rowIndex, 4)}
-                        tabIndex={0}
-                      >
-                        {editableCell.rowIndex === rowIndex && editableCell.colIndex === 4 ? (
-                          <CFormInput
-                            value={stop.dept_time || ''}
-                            onChange={(e) => handleInputChange(e, rowIndex, "dept_time")}
-                          />
-                        ) : (
-                          stop.dept_time
-                        )}
+                      <CTableDataCell>{stop.serial_no}</CTableDataCell>
+                      <CTableDataCell><strong>{stop.site?.name}</strong></CTableDataCell>
+                      <CTableDataCell tabIndex={0}>
+                        {editableInput(stop.dept_time, rowIndex, 4, 'dept_time')}
                       </CTableDataCell>
-                      <CTableDataCell
-                        onClick={() => handleCellClick(rowIndex, 5)}
-                        onKeyDown={(e) => handleKeyDown(e, rowIndex, 5)}
-                        tabIndex={0}
-                      >
-                        {editableCell.rowIndex === rowIndex && editableCell.colIndex === 5 ? (
-                          <CFormInput
-                            value={stop.arr_time || ''}
-                            onChange={(e) => handleInputChange(e, rowIndex, "arr_time")}
-                          />
-                        ) : (
-                          stop.arr_time
-                        )}
+                      <CTableDataCell tabIndex={0}>
+                        {editableInput(stop.arr_time, rowIndex, 5, 'arr_time')}
                       </CTableDataCell>
-                      <CTableDataCell>{stop.delayed_time || ""}</CTableDataCell>
-                      <CTableDataCell>{stop.distance || ""}</CTableDataCell>
+                      <CTableDataCell>{stop.delayed_time || '—'}</CTableDataCell>
+                      <CTableDataCell>{stop.distance || '—'}</CTableDataCell>
                       <CTableDataCell>
-                        {/* <CButton color="warning" size="sm" onClick={() => openEditModal(site)}>Edit</CButton>{' '} */}
-                        <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(site.id)}>Delete</CButton>
+                        <CButton color="danger" size="sm" onClick={() => handleDeleteRouteStop(stop.id)}>
+                          <CIcon icon={cilTrash} />
+                        </CButton>
                       </CTableDataCell>
                     </CTableRow>
                   ))}
                 </CTableBody>
               </CTable>
             )}
-            <CButton color="primary" onClick={handleSubmit}>
-              Save Changes
-            </CButton>
           </CCardBody>
         </CCard>
       </CCol>
+      <AlertModal alert={alert} onClose={clearAlert} />
+
     </CRow>
   );
 };

@@ -4,7 +4,8 @@ import path from 'node:path'
 import autoprefixer from 'autoprefixer'
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config();                              // load .env
+dotenv.config({ path: '.env.local', override: true }); // .env.local takes precedence
 
 export default defineConfig(({ mode }) => {
   console.log(`Running in ${mode} mode`);
@@ -56,10 +57,10 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       proxy: {
         '/api': {
-          target: backendUrl, // Your backend API server
+          target: backendUrl,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''), // Remove /api prefix from path
-          secure: true // Make sure requests are secure (HTTPS)
+          rewrite: (path) => path.replace(/^\/api/, ''),
+          secure: backendUrl?.startsWith('https'), // false for local HTTP, true for HTTPS
         },
       },
     },

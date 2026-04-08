@@ -19,7 +19,7 @@ import CIcon from '@coreui/icons-react';
 import { cilLockLocked, cilUser } from '@coreui/icons';
 import apiService from 'src/services/apiService';
 
-const Login = () => {
+const Login = ({ setIsAuthenticated }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -41,6 +41,7 @@ const Login = () => {
         return;
       }
       localStorage.setItem('token', response.data.access_token);
+      setIsAuthenticated(true);
       navigate('/dashboard');
     } catch (error) {
       console.error('Error logging in:', error);
