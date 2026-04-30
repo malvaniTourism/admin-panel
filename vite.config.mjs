@@ -1,22 +1,14 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import autoprefixer from 'autoprefixer'
-import dotenv from 'dotenv';
-
-dotenv.config();                              // load .env
-dotenv.config({ path: '.env.local', override: true }); // .env.local takes precedence
 
 export default defineConfig(({ mode }) => {
-  console.log(`Running in ${mode} mode`);
+  const env = loadEnv(mode, process.cwd(), '');
+  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:8001';
+  const isHttps = backendUrl.startsWith('https');
 
-  const args = process.argv.slice(2);
-  const modeArg = args.find(arg => arg.startsWith('--mode='));
-
-  // Set the backend URL based on the environment
-  const backendUrl = process.env[`VITE_API_BASE_URL_${mode.toUpperCase()}`] || process.env.VITE_API_BASE_URL;
-
-  console.log(`Backend URL: ${backendUrl}`);
+  console.log(`[vite] mode: ${mode} | backend: ${backendUrl}`);
 
   return {
     base: './',
@@ -25,9 +17,7 @@ export default defineConfig(({ mode }) => {
     },
     css: {
       postcss: {
-        plugins: [
-          autoprefixer({}), // add options if needed
-        ],
+        plugins: [autoprefixer({})],
       },
     },
     esbuild: {
@@ -38,9 +28,7 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       force: true,
       esbuildOptions: {
-        loader: {
-          '.js': 'jsx',
-        },
+        loader: { '.js': 'jsx' },
       },
     },
     plugins: [react()],
@@ -56,11 +44,15 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3000,
       proxy: {
-        '/api': {
+        '/admin/v2': {
           target: backendUrl,
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
-          secure: backendUrl?.startsWith('https'), // false for local HTTP, true for HTTPS
+          secure: isHttps,
+        },
+        '/api/v2': {
+          target: backendUrl,
+          changeOrigin: true,
+          secure: isHttps,
         },
       },
     },

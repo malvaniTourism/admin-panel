@@ -49,6 +49,10 @@ const RouteStops = React.lazy(() => import('./views/routestops/RouteStops'))
 const AppVersion = React.lazy(() => import('./views/appversion/AppVersion'))
 const BannerPlacements = React.lazy(() => import('./views/banners/BannerPlacements'))
 const BannerPackages = React.lazy(() => import('./views/banners/BannerPackages'))
+const Submissions = React.lazy(() => import('./views/submissions/Submissions'))
+const Comments = React.lazy(() => import('./views/comments/Comments'))
+const Messages = React.lazy(() => import('./views/messages/Messages'))
+const Events = React.lazy(() => import('./views/events/Events'))
 
 // Icons
 const CoreUIIcons = React.lazy(() => import('./views/icons/coreui-icons/CoreUIIcons'))
@@ -122,6 +126,10 @@ const routes = [
   { path: '/appversion', name: 'App Version', element: AppVersion },
   { path: '/banner-placements', name: 'Banner Placements', element: BannerPlacements },
   { path: '/banner-packages', name: 'Banner Packages', element: BannerPackages },
+  { path: '/submissions', name: 'Site Submissions', element: Submissions },
+  { path: '/comments', name: 'Comments', element: Comments },
+  { path: '/messages', name: 'Messages', element: Messages },
+  { path: '/events', name: 'Events', element: Events },
 ]
 
 export default routes

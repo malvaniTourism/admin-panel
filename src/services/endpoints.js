@@ -1,7 +1,11 @@
-// src/endpoint.js
-const mode = import.meta.env.MODE
+export const FTP_BASE_URL = import.meta.env.VITE_FTP_BASE_URL || '';
 
-const API_BASE_URL = import.meta.env[`VITE_API_BASE_URL_${mode.toUpperCase()}`];
-const FTP_BASE_URL = import.meta.env[`VITE_FTP_BASE_URL_${mode.toUpperCase()}`];
+const AWS_BASE = (import.meta.env.VITE_AWS_URL || '').replace(/\/$/, '');
 
-export { API_BASE_URL, FTP_BASE_URL };
+// Prepend AWS base URL to a relative S3 path returned by the API.
+// Passes through if the path is already absolute (starts with http).
+export const awsUrl = (path) => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  return `${AWS_BASE}/${path.replace(/^\//, '')}`;
+};

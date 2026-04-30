@@ -7,11 +7,13 @@ import {
   cilCursor,
   cilDescription,
   cilDrop,
+  cilEnvelopeClosed,
   cilNotes,
   cilPencil,
   cilPuzzle,
   cilSpeedometer,
   cilStar,
+  cilTask,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -43,10 +45,35 @@ const _nav = [
     icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
   },
   {
-    component: CNavItem,
+    component: CNavGroup,
     name: 'Sites',
     to: '/sites',
     icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
+    items: [
+      { component: CNavItem, name: 'All Sites', to: '/sites' },
+      { component: CNavItem, name: 'Submissions', to: '/submissions' },
+    ],
+  },
+  {
+    component: CNavGroup,
+    name: 'Events',
+    to: '/events',
+    icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
+    items: [
+      { component: CNavItem, name: 'All Events', to: '/events' },
+    ],
+  },
+  {
+    component: CNavItem,
+    name: 'Comments',
+    to: '/comments',
+    icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Messages',
+    to: '/messages',
+    icon: <CIcon icon={cilEnvelopeClosed} customClassName="nav-icon" />,
   },
   {
     component: CNavGroup,
@@ -54,28 +81,10 @@ const _nav = [
     to: '/banners',
     icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
     items: [
-      {
-        component: CNavItem,
-        name: 'Banners',
-        to: '/banners',
-      },
-      {
-        component: CNavItem,
-        name: 'Packages',
-        to: '/banner-packages',
-      },
-      {
-        component: CNavItem,
-        name: 'Placements',
-        to: '/banner-placements',
-      },
+      { component: CNavItem, name: 'Banners', to: '/banners' },
+      { component: CNavItem, name: 'Packages', to: '/banner-packages' },
+      { component: CNavItem, name: 'Placements', to: '/banner-placements' },
     ],
-  },
-  {
-    component: CNavItem,
-    name: 'Gallery',
-    to: '/gallery',
-    icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
   },
   {
     component: CNavTitle,

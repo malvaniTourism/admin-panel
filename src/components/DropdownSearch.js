@@ -85,7 +85,7 @@ const DropdownSearch = ({ onChange, endpoint, label, filter, valueKey = 'id' }) 
     setLoading(true);
     try {
       const response = await apiService('POST', `${endpoint}?page=${page}`, form);
-      const data = response.data.data || [];
+      const data = Array.isArray(response.data) ? response.data : (response.data.data || []);
       setOptions(
         data.map((item) => ({ value: item[valueKey], label: item.name }))
       );
