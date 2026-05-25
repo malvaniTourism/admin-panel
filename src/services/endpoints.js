@@ -1,5 +1,3 @@
-export const FTP_BASE_URL = import.meta.env.VITE_FTP_BASE_URL || '';
-
 const AWS_BASE = (import.meta.env.VITE_AWS_URL || '').replace(/\/$/, '');
 
 // Prepend AWS base URL to a relative S3 path returned by the API.

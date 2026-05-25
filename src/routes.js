@@ -53,6 +53,7 @@ const Submissions = React.lazy(() => import('./views/submissions/Submissions'))
 const Comments = React.lazy(() => import('./views/comments/Comments'))
 const Messages = React.lazy(() => import('./views/messages/Messages'))
 const Events = React.lazy(() => import('./views/events/Events'))
+const UserRoleRequests = React.lazy(() => import('./views/userRoleRequests/UserRoleRequests'))
 
 // Icons
 const CoreUIIcons = React.lazy(() => import('./views/icons/coreui-icons/CoreUIIcons'))
@@ -130,6 +131,7 @@ const routes = [
   { path: '/comments', name: 'Comments', element: Comments },
   { path: '/messages', name: 'Messages', element: Messages },
   { path: '/events', name: 'Events', element: Events },
+  { path: '/role-requests', name: 'Role Requests', element: UserRoleRequests },
 ]
 
 export default routes

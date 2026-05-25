@@ -29,13 +29,8 @@ import AlertModal from 'src/components/AlertModal';
 import DropdownSearch from '../../components/DropdownSearch';
 import MultiSelectDropdown from '../../components/MultiSelectDropdown';
 import ExpandableText from '../../components/ExpandableText';
-import { FTP_BASE_URL } from 'src/services/endpoints';
+import { awsUrl } from 'src/services/endpoints';
 import { parseApiMessage } from 'src/utils/apiMessages';
-
-const resolveImageUrl = (path) => {
-  if (!path) return null;
-  return /^https?:\/\//i.test(path) ? path : `${FTP_BASE_URL}${path}`;
-};
 
 const emptyForm = {
   id: '',
@@ -73,14 +68,31 @@ const Sites = () => {
   const [formData, setFormData] = useState(emptyForm);
 
   // Search filters — only committed to activeFilters on Search click
-  const [searchFilters, setSearchFilters] = useState({ name: '', parent_id: '', category: '' });
-  const activeFilters = useRef({ name: '', parent_id: '', category: '' });
+  const [searchFilters, setSearchFilters] = useState({ name: '', parent_id: '', categoryId: '' });
+  const activeFilters = useRef({ name: '', parent_id: '', categoryId: '' });
   const [searchTrigger, setSearchTrigger] = useState(0);
+
+  const [allCategories, setAllCategories] = useState([]);
+  const [selectedParentCat, setSelectedParentCat] = useState('');
+  const [subCategories, setSubCategories] = useState([]);
 
   useEffect(() => {
     fetchSites(currentPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, searchTrigger]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await apiService('POST', 'listcategories', { apitype: 'list' });
+        if (data.success) {
+          const list = Array.isArray(data.data) ? data.data : (data.data.data || []);
+          setAllCategories(list);
+        }
+      } catch (_) {}
+    };
+    fetchCategories();
+  }, []);
 
   const showError = (msg) => setAlert({ type: 'danger', message: msg });
   const showSuccess = (msg) => setAlert({ type: 'success', message: msg });
@@ -92,7 +104,7 @@ const Sites = () => {
     dataToSubmit.append('global', 1);
     const filters = activeFilters.current;
     if (filters.name) dataToSubmit.append('search', filters.name);
-    if (filters.category) dataToSubmit.append('category', filters.category);
+    if (filters.categoryId) dataToSubmit.append('category_id', filters.categoryId);
     if (filters.parent_id) dataToSubmit.append('parent_id', filters.parent_id);
 
     setLoading(true);
@@ -385,21 +397,45 @@ const Sites = () => {
               <CCol md={3}>
                 <CFormLabel>City</CFormLabel>
                 <DropdownSearch
-                  onChange={(id) => setSearchFilters((p) => ({ ...p, parent_id: id, category: '' }))}
+                  onChange={(id) => setSearchFilters((p) => ({ ...p, parent_id: id }))}
                   endpoint="sites"
                   label="Cities"
                   filter={[{ category: 'city' }]}
                 />
               </CCol>
-              <CCol md={3}>
+              <CCol md={2}>
                 <CFormLabel>Category</CFormLabel>
-                <DropdownSearch
-                  onChange={(id) => setSearchFilters((p) => ({ ...p, category: id }))}
-                  endpoint="listcategories"
-                  label="Categories"
-                  filter={[{ global: 1 }]}
-                  valueKey="code"
-                />
+                <CFormSelect
+                  value={selectedParentCat}
+                  onChange={(e) => {
+                    const catId = e.target.value;
+                    setSelectedParentCat(catId);
+                    const cat = allCategories.find((c) => String(c.id) === catId);
+                    const subs = cat?.sub_categories || [];
+                    setSubCategories(subs);
+                    setSearchFilters((p) => ({ ...p, categoryId: '' }));
+                  }}
+                  style={{ color: '#212631', backgroundColor: '#fff' }}
+                >
+                  <option value="">All Categories</option>
+                  {allCategories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </CFormSelect>
+              </CCol>
+              <CCol md={2}>
+                <CFormLabel>Sub Category</CFormLabel>
+                <CFormSelect
+                  value={searchFilters.categoryId}
+                  onChange={(e) => setSearchFilters((p) => ({ ...p, categoryId: e.target.value }))}
+                  disabled={subCategories.length === 0}
+                  style={{ color: '#212631', backgroundColor: '#fff' }}
+                >
+                  <option value="">All</option>
+                  {subCategories.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </CFormSelect>
               </CCol>
               <CCol md="auto">
                 <CButton color="primary" type="submit">Search</CButton>
@@ -431,13 +467,13 @@ const Sites = () => {
                   <CCol xs={12} md={2} className="text-center">
                     {site.image ? (
                       <CImage
-                        src={resolveImageUrl(site.image)}
+                        src={awsUrl(site.image)}
                         alt={site.name}
                         style={{ width: '100%', maxWidth: 120, height: 90, objectFit: 'cover', borderRadius: 8 }}
                       />
                     ) : site.icon ? (
                       <CImage
-                        src={resolveImageUrl(site.icon)}
+                        src={awsUrl(site.icon)}
                         alt={site.name}
                         style={{ width: 80, height: 80, objectFit: 'contain' }}
                       />
@@ -514,7 +550,7 @@ const Sites = () => {
                   <CCol xs={12} md={3} className="d-flex flex-column align-items-end gap-2">
                     {site.logo && (
                       <CImage
-                        src={resolveImageUrl(site.logo)}
+                        src={awsUrl(site.logo)}
                         alt="logo"
                         style={{ height: 32, objectFit: 'contain', marginBottom: 4 }}
                       />

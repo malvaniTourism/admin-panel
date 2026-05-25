@@ -223,7 +223,7 @@ const BonusTypes = () => {
                       )}
                       {bt.amount != null && (
                         <CBadge color="success" shape="rounded-pill">
-                          ₹ {bt.amount}
+                          {bt.amount} coins
                         </CBadge>
                       )}
                     </div>

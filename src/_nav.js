@@ -141,6 +141,11 @@ const _nav = [
         to: '/queries',
         icon: <CIcon icon={cilDrop} customClassName="nav-icon" />,
       },
+      {
+        component: CNavItem,
+        name: 'Role Requests',
+        to: '/role-requests',
+      },
     ],
   },
   {

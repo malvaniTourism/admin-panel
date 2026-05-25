@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CImage, CModal, CModalHeader, CModalBody, CModalFooter, CButton } from '@coreui/react';
-import { FTP_BASE_URL } from 'src/services/endpoints';
+import { awsUrl } from 'src/services/endpoints';
 
 const ImageCell = ({ banner }) => {
   const [modal, setModal] = useState(false);
@@ -18,7 +18,7 @@ const ImageCell = ({ banner }) => {
   return (
     <>
       <CImage
-        src={FTP_BASE_URL + banner.image}
+        src={awsUrl(banner.image)}
         alt={banner.image}
         width="50"
         onClick={() => handleImageClick(banner.image)}
@@ -29,7 +29,7 @@ const ImageCell = ({ banner }) => {
           <h5>Image Preview</h5>
         </CModalHeader>
         <CModalBody className="d-flex justify-content-center">
-          <CImage src={FTP_BASE_URL + selectedImage} alt={selectedImage} />
+          <CImage src={awsUrl(selectedImage)} alt={selectedImage} />
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={toggleModal}>Close</CButton>

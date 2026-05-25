@@ -25,15 +25,10 @@ import {
 import CIcon from '@coreui/icons-react';
 import { cilPencil, cilTrash, cilTag } from '@coreui/icons';
 import apiService from 'src/services/apiService';
+import { awsUrl } from 'src/services/endpoints';
 import AlertModal from 'src/components/AlertModal';
 import DropdownSearch from '../../components/DropdownSearch';
-import { FTP_BASE_URL } from 'src/services/endpoints';
 import { parseApiMessage } from 'src/utils/apiMessages';
-
-const resolveImageUrl = (path) => {
-  if (!path) return null;
-  return /^https?:\/\//i.test(path) ? path : `${FTP_BASE_URL}${path}`;
-};
 
 const emptyForm = {
   id: '',
@@ -129,7 +124,7 @@ const Categories = () => {
       status: category.status ?? false,
       meta_data: category.meta_data ?? '',
     });
-    setCurrentIconUrl(resolveImageUrl(category.icon) ?? '');
+    setCurrentIconUrl(awsUrl(category.icon) ?? '');
     setShowEditModal(true);
   };
 
@@ -337,7 +332,7 @@ const Categories = () => {
                   <CCol xs={12} md={1} className="text-center">
                     {category.icon ? (
                       <CImage
-                        src={resolveImageUrl(category.icon)}
+                        src={awsUrl(category.icon)}
                         alt={category.name}
                         style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 8 }}
                       />

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const i = require\\('@coreui/icons'\\); ['cilPeople','cilShieldAlt','cilUserFollow','cilTask','cilAccountLogout'].forEach\\(k => console.log\\(k, k in i\\)\\)\")"
+    ]
+  }
+}

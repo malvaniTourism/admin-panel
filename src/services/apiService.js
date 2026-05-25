@@ -13,6 +13,10 @@ const handleResponse = async (response) => {
     window.location.hash = '#/login';
     throw new Error('Session expired. Please log in again.');
   }
+  if (response.status === 429) {
+    const data = await response.json();
+    throw new Error(data.message || 'Too many requests. Please slow down and try again later.');
+  }
   const data = await response.json();
   if (!response.ok) {
     if (data.message && typeof data.message === 'object') {

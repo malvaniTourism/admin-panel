@@ -175,6 +175,9 @@ const Submissions = () => {
                       <CBadge color={STATUS_COLORS[s.submission_status] || 'secondary'} shape="rounded-pill">
                         {s.submission_status || 'unknown'}
                       </CBadge>
+                      {s.meta_data?.resubmission && (
+                        <CBadge color="warning" shape="rounded-pill">Resubmitted</CBadge>
+                      )}
                       {s.categories?.map((c) => (
                         <CBadge key={c.id} color="info" shape="rounded-pill">{c.name}</CBadge>
                       ))}

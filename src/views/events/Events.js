@@ -727,6 +727,9 @@ const Events = () => {
                           <CIcon icon={cilStar} size="sm" className="me-1" />Featured
                         </CBadge>
                       )}
+                      {ev.meta_data?.resubmission && (
+                        <CBadge color="warning" shape="rounded-pill">Resubmitted</CBadge>
+                      )}
                       {ev.event_type && (
                         <CBadge color="info" shape="rounded-pill">{ev.event_type.name}</CBadge>
                       )}
